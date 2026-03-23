@@ -1,5 +1,6 @@
 package com.libri.api
 
+import io.github.cdimascio.dotenv.dotenv
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
@@ -7,5 +8,13 @@ import org.springframework.boot.runApplication
 class ApiApplication
 
 fun main(args: Array<String>) {
-	runApplication<ApiApplication>(*args)
+    val dotenv = dotenv {
+        ignoreIfMissing = true
+    }
+
+    dotenv.entries().forEach { entry ->
+        System.setProperty(entry.key, entry.value)
+    }
+
+    runApplication<ApiApplication>(*args)
 }
