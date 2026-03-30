@@ -14,8 +14,10 @@ spring:
 server:
   port: 8080
 
-storage:
-  images-dir: ${IMAGES_DIR}
-
-crawler:
-  binary-path: ${CRAWLER_BINARY_PATH}
+libri:
+  storage:
+    images-dir: ${IMAGES_DIR}
+  crawler:
+    binary-path: ${CRAWLER_BINARY_PATH}
+  internal:
+    api-key: ${INTERNAL_API_KEY}

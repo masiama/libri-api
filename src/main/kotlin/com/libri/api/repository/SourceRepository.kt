@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface SourceRepository : JpaRepository<Source, String> {
-    fun findAllByEnabledTrue(): List<Source>
+	fun findAllByEnabledTrue(): List<Source>
 }

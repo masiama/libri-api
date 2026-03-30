@@ -17,22 +17,13 @@ class CrawlerService(
 	private val crawlJobRepository: CrawlJobRepository,
 	private val sourceRepository: SourceRepository,
 ) {
-	@Value("\${crawler.binary-path}")
+	@Value("\${libri.crawler.binary-path}")
 	lateinit var crawlerBinaryPath: String
 
-	@Value("\${spring.datasource.url}")
-	lateinit var datasourceUrl: String
+	@Value("\${server.port}")
+	lateinit var serverPort: String
 
-	@Value("\${spring.datasource.username}")
-	lateinit var datasourceUsername: String
-
-	@Value("\${spring.datasource.password}")
-	lateinit var datasourcePassword: String
-
-	private fun buildDatabaseUrl(): String {
-		val uri = java.net.URI(datasourceUrl.removePrefix("jdbc:"))
-		return "postgres://$datasourceUsername:$datasourcePassword@${uri.host}:${uri.port}${uri.path}?${uri.query ?: ""}"
-	}
+	private fun buildApiUrl() = "http://localhost:$serverPort"
 
 	fun isRunning(): Boolean =
 		crawlJobRepository.existsByStatus(CrawlStatus.RUNNING)
@@ -55,7 +46,7 @@ class CrawlerService(
 		try {
 			val process = ProcessBuilder(crawlerBinaryPath, "--source", sourceName)
 				.redirectErrorStream(true)
-				.apply { environment()["DATABASE_URL"] = buildDatabaseUrl() }
+				.apply { environment()["API_URL"] = buildApiUrl() }
 				.start()
 
 			process.inputStream.bufferedReader().use { reader ->

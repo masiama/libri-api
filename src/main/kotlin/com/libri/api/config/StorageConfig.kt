@@ -8,25 +8,25 @@ import java.security.MessageDigest
 
 @Configuration
 class StorageConfig {
-    @Value("\${storage.images-dir}")
-    lateinit var imagesDir: String
+	@Value("\${libri.storage.images-dir}")
+	lateinit var imagesDir: String
 
-    @PostConstruct
-    fun validate() {
-        val dir = File(imagesDir)
-        if (!dir.exists() || !dir.isDirectory) {
-            throw IllegalStateException("Images directory not found: $imagesDir — set IMAGES_DIR in your environment")
-        }
-    }
+	@PostConstruct
+	fun validate() {
+		val dir = File(imagesDir)
+		if (!dir.exists() || !dir.isDirectory) {
+			throw IllegalStateException("Images directory not found: $imagesDir — set IMAGES_DIR in your environment")
+		}
+	}
 
-    fun resolveImagePath(isbn: String): File {
-        val hash = MessageDigest.getInstance("MD5")
-            .digest(isbn.toByteArray())
-            .joinToString("") { "%02x".format(it) }
+	fun resolveImagePath(isbn: String): File {
+		val hash = MessageDigest.getInstance("MD5")
+			.digest(isbn.toByteArray())
+			.joinToString("") { "%02x".format(it) }
 
-        val shard1 = hash.substring(0, 2)
-        val shard2 = hash.substring(2, 4)
+		val shard1 = hash.substring(0, 2)
+		val shard2 = hash.substring(2, 4)
 
-        return File(imagesDir, "$shard1/$shard2/$isbn.jpg")
-    }
+		return File(imagesDir, "$shard1/$shard2/$isbn.jpg")
+	}
 }
