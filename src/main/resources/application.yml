@@ -10,6 +10,11 @@ spring:
       ddl-auto: validate
     show-sql: false
     open-in-view: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://${SUPABASE_PROJECT_REF}.supabase.co/auth/v1/.well-known/jwks.json
 
 server:
   port: 8080
