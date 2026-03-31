@@ -1,0 +1,62 @@
+package com.libri.api.config
+
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm
+import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.security.oauth2.jwt.JwtDecoder
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
+import org.springframework.security.web.SecurityFilterChain
+
+@Configuration
+@EnableWebSecurity
+class SecurityConfig(
+	@Value("\${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
+	private val jwkSetUri: String
+) {
+
+	@Bean
+	fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
+		http
+			.csrf { it.disable() }
+			.sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+			.authorizeHttpRequests { auth ->
+				auth
+					.requestMatchers("/api/v1/ping").permitAll()
+					.requestMatchers("/api/v1/internal/**").permitAll()
+					.requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+					.anyRequest().authenticated()
+			}
+			.oauth2ResourceServer { oauth2 ->
+				oauth2.jwt { it.jwtAuthenticationConverter(jwtAuthenticationConverter()) }
+			}
+
+		return http.build()
+	}
+
+	@Bean
+	fun jwtAuthenticationConverter(): JwtAuthenticationConverter {
+		val converter = JwtAuthenticationConverter()
+		converter.setJwtGrantedAuthoritiesConverter { jwt: Jwt ->
+			val authorities = mutableListOf<SimpleGrantedAuthority>()
+
+			val userMetadata = jwt.getClaim<Map<String, Any>>("app_metadata")
+			if (userMetadata != null && userMetadata["is_admin"] == true) {
+				authorities.add(SimpleGrantedAuthority("ROLE_ADMIN"))
+			}
+
+			authorities
+		}
+		return converter
+	}
+
+	@Bean
+	fun jwtDecoder(): JwtDecoder =
+		NimbusJwtDecoder.withJwkSetUri(jwkSetUri).jwsAlgorithm(SignatureAlgorithm.ES256).build()
+}
