@@ -17,6 +17,19 @@ Vue admin panel and React Native mobile app.
 - A [Supabase](https://supabase.com) project with email auth enabled
 - [libri-crawler](https://github.com/masiama/libri-crawler) built binary
 
+## Configuration
+
+### Gradle properties
+
+Create `~/.gradle/gradle.properties` with your GitHub credentials for pushing Docker images:
+
+```properties
+ghcr.username=your-github-username
+ghcr.token=your-github-token
+```
+
+The token needs `write:packages` scope.
+
 ## Getting started
 
 **1. Clone and configure**
@@ -63,13 +76,13 @@ curl -X PUT "https://your-project-ref.supabase.co/auth/v1/admin/users/<user-uuid
 ### Public
 
 | Method | Endpoint       | Description  |
-| ------ | -------------- | ------------ |
+|--------|----------------|--------------|
 | GET    | `/api/v1/ping` | Health check |
 
 ### Authenticated
 
 | Method | Endpoint                    | Description            |
-| ------ | --------------------------- | ---------------------- |
+|--------|-----------------------------|------------------------|
 | GET    | `/api/v1/books`             | List books (paginated) |
 | GET    | `/api/v1/books/{isbn}`      | Get book by ISBN       |
 | GET    | `/api/v1/images/{isbn}.jpg` | Get cover image        |
@@ -77,7 +90,7 @@ curl -X PUT "https://your-project-ref.supabase.co/auth/v1/admin/users/<user-uuid
 ### Admin only
 
 | Method | Endpoint                       | Description                           |
-| ------ | ------------------------------ | ------------------------------------- |
+|--------|--------------------------------|---------------------------------------|
 | POST   | `/api/v1/admin/crawl`          | Trigger crawl for all enabled sources |
 | POST   | `/api/v1/admin/crawl/{source}` | Trigger crawl for a specific source   |
 | GET    | `/api/v1/admin/crawl/status`   | Get last 10 crawl job statuses        |
@@ -87,7 +100,7 @@ curl -X PUT "https://your-project-ref.supabase.co/auth/v1/admin/users/<user-uuid
 Protected by `X-Internal-Key` header, not JWT.
 
 | Method | Endpoint                        | Description                |
-| ------ | ------------------------------- | -------------------------- |
+|--------|---------------------------------|----------------------------|
 | POST   | `/api/v1/internal/books/batch`  | Upsert a batch of books    |
 | GET    | `/api/v1/internal/books/exists` | Check if a book URL exists |
 
@@ -100,5 +113,6 @@ Managed by Flyway. Migrations run automatically on startup from
 
 Libri API is the central service in the Libri ecosystem:
 
-- **[libri-crawler](https://github.com/masiama/libri-crawler)** scrapes book metadata and sends it here via the internal API
+- **[libri-crawler](https://github.com/masiama/libri-crawler)** scrapes book metadata and sends it here via the internal
+  API
 - Cover images are stored on local disk in a shared directory

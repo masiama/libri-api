@@ -4,6 +4,7 @@ plugins {
 	id("org.springframework.boot") version "4.0.4"
 	id("io.spring.dependency-management") version "1.1.7"
 	kotlin("plugin.jpa") version "2.2.21"
+	id("com.google.cloud.tools.jib") version "3.5.3"
 }
 
 group = "com.libri"
@@ -55,4 +56,14 @@ tasks.withType<Test> {
 
 springBoot {
 	buildInfo()
+}
+
+jib {
+	to {
+		image = "ghcr.io/masiama/libri-api"
+		auth {
+			username = findProperty("ghcr.username") as String? ?: ""
+			password = findProperty("ghcr.token") as String? ?: ""
+		}
+	}
 }
