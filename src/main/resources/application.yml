@@ -26,3 +26,5 @@ libri:
     binary-path: ${CRAWLER_BINARY_PATH}
   internal:
     api-key: ${INTERNAL_API_KEY}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
