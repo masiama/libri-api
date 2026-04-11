@@ -7,7 +7,7 @@ Vue admin panel and React Native mobile app.
 ## Tech stack
 
 - Kotlin + Spring Boot 4
-- PostgreSQL via Supabase
+- PostgreSQL
 - Flyway for schema migrations
 - JWT authentication via Supabase Auth (ES256)
 
