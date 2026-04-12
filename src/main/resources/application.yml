@@ -14,7 +14,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: https://${SUPABASE_PROJECT_REF}.supabase.co/auth/v1/.well-known/jwks.json
+          jwk-set-uri: ${CLERK_JWKS_URL}
 
 server:
   port: 8080

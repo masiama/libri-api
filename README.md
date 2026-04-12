@@ -9,12 +9,12 @@ Vue admin panel and React Native mobile app.
 - Kotlin + Spring Boot 4
 - PostgreSQL
 - Flyway for schema migrations
-- JWT authentication via Supabase Auth (ES256)
+- JWT authentication via Clerk
 
 ## Prerequisites
 
 - Java 21
-- A [Supabase](https://supabase.com) project with email auth enabled
+- A [Clerk](https://clerk.com) account with a JWT template configured
 - [libri-crawler](https://github.com/masiama/libri-crawler) built binary
 
 ## Configuration
@@ -54,21 +54,21 @@ mkdir -p $IMAGES_DIR  # or whatever path you set in .env
 
 ## Authentication
 
-All endpoints except `/api/v1/ping` require a valid Supabase JWT passed as:
+All endpoints except `/api/v1/ping` require a valid Clerk JWT passed as:
 
 ```
 Authorization: Bearer <token>
 ```
 
-Admin endpoints additionally require the `is_admin: true` claim in `app_metadata`.
-Set this on a user via the Supabase service role API:
+A JWT template must be created in Clerk dashboard → JWT Templates. The backend validates tokens issued by this template.
 
-```bash
-curl -X PUT "https://your-project-ref.supabase.co/auth/v1/admin/users/<user-uuid>" \
-  -H "apikey: <supabase-publishable-key>" \
-  -H "Authorization: Bearer <supabase-secret-key>" \
-  -H "Content-Type: application/json" \
-  -d '{"app_metadata": {"is_admin": true}}'
+Admin endpoints additionally require `is_admin: true` in the user's public metadata.
+Set this in Clerk dashboard → Users → select user → Public metadata:
+
+```json
+{
+  "is_admin": true
+}
 ```
 
 ## API
