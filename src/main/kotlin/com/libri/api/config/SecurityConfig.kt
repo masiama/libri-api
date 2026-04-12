@@ -51,9 +51,8 @@ class SecurityConfig(
 		val converter = JwtAuthenticationConverter()
 		converter.setJwtGrantedAuthoritiesConverter { jwt: Jwt ->
 			val authorities = mutableListOf<SimpleGrantedAuthority>()
-
-			val userMetadata = jwt.getClaim<Map<String, Any>>("app_metadata")
-			if (userMetadata != null && userMetadata["is_admin"] == true) {
+			
+			if (jwt.getClaim<Boolean>("is_admin") == true) {
 				authorities.add(SimpleGrantedAuthority("ROLE_ADMIN"))
 			}
 
@@ -64,7 +63,7 @@ class SecurityConfig(
 
 	@Bean
 	fun jwtDecoder(): JwtDecoder =
-		NimbusJwtDecoder.withJwkSetUri(jwkSetUri).jwsAlgorithm(SignatureAlgorithm.ES256).build()
+		NimbusJwtDecoder.withJwkSetUri(jwkSetUri).jwsAlgorithm(SignatureAlgorithm.RS256).build()
 
 	@Bean
 	fun corsConfigurationSource(): CorsConfigurationSource {
