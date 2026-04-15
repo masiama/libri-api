@@ -27,7 +27,7 @@ class CrawlerController(
 	fun triggerSource(@PathVariable source: String): ResponseEntity<String> {
 		if (!sourceRepository.existsById(source)) return ResponseEntity.notFound().build()
 		if (crawlerService.isRunning()) return ResponseEntity.status(409).body("A crawl is already running")
-		crawlerService.run(source)
+		crawlerService.runAsync(source)
 		return ResponseEntity.accepted().body("Crawl started for $source")
 	}
 

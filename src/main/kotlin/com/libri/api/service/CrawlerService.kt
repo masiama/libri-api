@@ -35,6 +35,11 @@ class CrawlerService(
 		}
 	}
 
+	@Async
+	fun runAsync(sourceName: String) {
+		run(sourceName)
+	}
+
 	fun run(sourceName: String) {
 		val job = crawlJobRepository.save(
 			CrawlJob(sourceName = sourceName)
