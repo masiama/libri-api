@@ -14,7 +14,7 @@ import java.nio.file.Files
 @RestController
 @RequestMapping("/api/v1/images")
 class ImageController(private val storageService: StorageService) {
-	@GetMapping("/{isbn}.*")
+	@GetMapping("/{isbn}.jpg")
 	fun getImage(@PathVariable isbn: String): ResponseEntity<Resource> {
 		val file = storageService.load(isbn)
 		val resource = UrlResource(file.toURI())

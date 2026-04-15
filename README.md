@@ -84,7 +84,7 @@ Internal crawler endpoints use `X-Internal-Key` instead of JWT authentication.
 ### Public
 
 - `GET /api/v1/ping`
-- `GET /api/v1/images/{isbn}.{ext}`
+- `GET /api/v1/images/{isbn}.jpg`
 
 ### Authenticated
 
