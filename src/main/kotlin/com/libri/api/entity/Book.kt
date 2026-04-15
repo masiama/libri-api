@@ -6,19 +6,19 @@ import jakarta.persistence.*
 @Entity
 @Table(name = "books")
 class Book(
-    @Id
-    val isbn: String,
+	@Id
+	val isbn: String,
 
-    @Column(nullable = false)
-    val title: String,
+	@Column(nullable = false)
+	val title: String,
 
-    @Column(columnDefinition = "jsonb")
-    @Convert(converter = StringListConverter::class)
-    val authors: List<String> = emptyList(),
+	@Column(columnDefinition = "jsonb")
+	@Convert(converter = StringListConverter::class)
+	val authors: List<String> = emptyList(),
 
-    @Column(nullable = false)
-    val url: String,
+	@Column(nullable = false)
+	val url: String,
 
-    @Column(name = "source_name", nullable = false)
-    val sourceName: String,
+	@Column(name = "source_name", nullable = false)
+	val sourceName: String,
 )

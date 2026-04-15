@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/v1")
 class PingController(private val buildProperties: BuildProperties) {
-    @GetMapping("/ping")
-    fun ping(): Map<String, String> =
-        mapOf("status" to "ok", "version" to (buildProperties.version ?: "unknown"))
+	@GetMapping("/ping")
+	fun ping(): Map<String, String> =
+		mapOf("status" to "ok", "version" to (buildProperties.version ?: "unknown"))
 }
