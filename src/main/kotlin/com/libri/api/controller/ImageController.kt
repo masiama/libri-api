@@ -13,13 +13,12 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/v1/images")
 class ImageController(private val storageConfig: StorageConfig) {
-
-    @GetMapping("/{isbn}.jpg")
-    fun getImage(@PathVariable isbn: String): ResponseEntity<Resource> {
-        val file = storageConfig.resolveImagePath(isbn)
-        if (!file.exists()) return ResponseEntity.notFound().build()
-        return ResponseEntity.ok()
-            .contentType(MediaType.IMAGE_JPEG)
-            .body(FileSystemResource(file))
-    }
+	@GetMapping("/{isbn}.jpg")
+	fun getImage(@PathVariable isbn: String): ResponseEntity<Resource> {
+		val file = storageConfig.resolveImagePath(isbn)
+		if (!file.exists()) return ResponseEntity.notFound().build()
+		return ResponseEntity.ok()
+			.contentType(MediaType.IMAGE_JPEG)
+			.body(FileSystemResource(file))
+	}
 }

@@ -12,29 +12,29 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/v1/admin/crawl")
 class CrawlerController(
-    private val crawlerService: CrawlerService,
-    private val crawlJobRepository: CrawlJobRepository,
-    private val sourceRepository: SourceRepository,
+	private val crawlerService: CrawlerService,
+	private val crawlJobRepository: CrawlJobRepository,
+	private val sourceRepository: SourceRepository,
 ) {
-    @PostMapping
-    fun triggerAll(): ResponseEntity<String> {
-        if (crawlerService.isRunning()) return ResponseEntity.status(409).body("A crawl is already running")
-        crawlerService.runAll()
-        return ResponseEntity.accepted().body("Crawl started for all enabled sources")
-    }
+	@PostMapping
+	fun triggerAll(): ResponseEntity<String> {
+		if (crawlerService.isRunning()) return ResponseEntity.status(409).body("A crawl is already running")
+		crawlerService.runAll()
+		return ResponseEntity.accepted().body("Crawl started for all enabled sources")
+	}
 
-    @PostMapping("/{source}")
-    fun triggerSource(@PathVariable source: String): ResponseEntity<String> {
-        if (!sourceRepository.existsById(source)) return ResponseEntity.notFound().build()
-        if (crawlerService.isRunning()) return ResponseEntity.status(409).body("A crawl is already running")
-        crawlerService.run(source)
-        return ResponseEntity.accepted().body("Crawl started for $source")
-    }
+	@PostMapping("/{source}")
+	fun triggerSource(@PathVariable source: String): ResponseEntity<String> {
+		if (!sourceRepository.existsById(source)) return ResponseEntity.notFound().build()
+		if (crawlerService.isRunning()) return ResponseEntity.status(409).body("A crawl is already running")
+		crawlerService.run(source)
+		return ResponseEntity.accepted().body("Crawl started for $source")
+	}
 
-    @GetMapping("/status")
-    fun status(): List<CrawlJob> {
-        return crawlJobRepository.findAll(
-            PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "startedAt"))
-        ).content
-    }
+	@GetMapping("/status")
+	fun status(): List<CrawlJob> {
+		return crawlJobRepository.findAll(
+			PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "startedAt"))
+		).content
+	}
 }

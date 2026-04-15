@@ -51,7 +51,7 @@ class SecurityConfig(
 		val converter = JwtAuthenticationConverter()
 		converter.setJwtGrantedAuthoritiesConverter { jwt: Jwt ->
 			val authorities = mutableListOf<SimpleGrantedAuthority>()
-			
+
 			if (jwt.getClaim<Boolean>("is_admin") == true) {
 				authorities.add(SimpleGrantedAuthority("ROLE_ADMIN"))
 			}

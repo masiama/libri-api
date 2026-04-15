@@ -8,12 +8,12 @@ import jakarta.persistence.Table
 @Entity
 @Table(name = "sources")
 class Source(
-    @Id
-    val name: String,
+	@Id
+	val name: String,
 
-    @Column(nullable = false)
-    val priority: Short,
+	@Column(nullable = false)
+	val priority: Short,
 
-    @Column(nullable = false)
-    val enabled: Boolean = true,
+	@Column(nullable = false)
+	val enabled: Boolean = true,
 )

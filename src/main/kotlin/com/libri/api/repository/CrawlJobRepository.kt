@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface CrawlJobRepository : JpaRepository<CrawlJob, Long> {
-    fun existsByStatus(status: CrawlStatus): Boolean
+	fun existsByStatus(status: CrawlStatus): Boolean
 }
