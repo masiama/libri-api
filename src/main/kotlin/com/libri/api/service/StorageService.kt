@@ -69,16 +69,12 @@ class StorageService(
 		}
 
 		val contentType = file.contentType ?: throw IllegalArgumentException("Missing content type")
-
-		val allowedTypes = setOf(
-			"image/jpeg",
-			"image/png",
-			"image/gif",
-			"image/webp"
-		)
-
 		if (contentType !in allowedTypes) {
 			throw IllegalArgumentException("Unsupported file type: $contentType")
 		}
+	}
+
+	companion object {
+		private val allowedTypes = setOf("image/jpeg", "image/png", "image/gif", "image/webp")
 	}
 }
