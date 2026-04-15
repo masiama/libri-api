@@ -1,68 +1,74 @@
 # Libri API
 
-Backend service for the Libri book library ecosystem. Manages the book catalogue,
-serves cover images, orchestrates the Go crawler, and exposes a REST API for the
-Vue admin panel and React Native mobile app.
+Kotlin/Spring Boot backend for the Libri catalog.
 
-## Tech stack
+It stores book metadata in PostgreSQL, serves cover images from local storage,
+exposes authenticated endpoints for the admin UI, and provides internal endpoints
+used by the crawler.
 
-- Kotlin + Spring Boot 4
+## Stack
+
+- Kotlin
+- Spring Boot
+- Spring Data JPA
 - PostgreSQL
-- Flyway for schema migrations
-- JWT authentication via Clerk
+- Flyway
+- Spring Security resource server
 
-## Prerequisites
+## Requirements
 
 - Java 21
-- A [Clerk](https://clerk.com) account with a JWT template configured
-- [libri-crawler](https://github.com/masiama/libri-crawler) built binary
+- PostgreSQL
+- A Clerk application with a JWKS endpoint
+- A built [`libri-crawler`](https://github.com/masiama/libri-crawler) binary if you
+  want to trigger crawls from the API
 
 ## Configuration
 
-### Gradle properties
+The application reads environment variables through Spring config and local `.env`
+loading in development.
 
-Create `~/.gradle/gradle.properties` with your GitHub credentials for pushing Docker images:
-
-```properties
-ghcr.username=your-github-username
-ghcr.token=your-github-token
-```
-
-The token needs `write:packages` scope.
-
-## Getting started
-
-**1. Clone and configure**
+Required variables:
 
 ```bash
-cp .env.example .env
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=libri
+DB_USER=libri
+DB_PASS=secret
+CLERK_JWKS_URL=https://example.clerk.accounts.dev/.well-known/jwks.json
+IMAGES_DIR=/absolute/path/to/images
+CRAWLER_BINARY_PATH=/absolute/path/to/libri-crawler/bin/crawler
+INTERNAL_API_KEY=change-me
+CORS_ALLOWED_ORIGINS=http://localhost:3000
 ```
 
-Fill in `.env`
-
-**2. Create the images directory**
+Create the image directory before startup:
 
 ```bash
-mkdir -p $IMAGES_DIR  # or whatever path you set in .env
+mkdir -p "$IMAGES_DIR"
 ```
 
-**3. Run**
+## Running locally
+
+Start the app:
 
 ```bash
 ./gradlew bootRun
 ```
 
-## Authentication
+## Authentication and authorization
 
-All endpoints except `/api/v1/ping` require a valid Clerk JWT passed as:
+All endpoints except `/api/v1/ping`, `/api/v1/images/**`, and `/api/v1/internal/**`
+require a valid Bearer token.
 
 ```
 Authorization: Bearer <token>
 ```
 
-A JWT template must be created in Clerk dashboard → JWT Templates. The backend validates tokens issued by this template.
+Admin endpoints require the authenticated user to have `is_admin: true`, which is
+mapped to `ROLE_ADMIN`.
 
-Admin endpoints additionally require `is_admin: true` in the user's public metadata.
 Set this in Clerk dashboard → Users → select user → Public metadata:
 
 ```json
@@ -71,48 +77,54 @@ Set this in Clerk dashboard → Users → select user → Public metadata:
 }
 ```
 
-## API
+Internal crawler endpoints use `X-Internal-Key` instead of JWT authentication.
+
+## API surface
 
 ### Public
 
-| Method | Endpoint       | Description  |
-|--------|----------------|--------------|
-| GET    | `/api/v1/ping` | Health check |
+- `GET /api/v1/ping`
+- `GET /api/v1/images/{isbn}.{ext}`
 
 ### Authenticated
 
-| Method | Endpoint                    | Description            |
-|--------|-----------------------------|------------------------|
-| GET    | `/api/v1/books`             | List books (paginated) |
-| GET    | `/api/v1/books/{isbn}`      | Get book by ISBN       |
-| GET    | `/api/v1/images/{isbn}.jpg` | Get cover image        |
+- `GET /api/v1/books`
+- `GET /api/v1/books/{isbn}`
+- `GET /api/v1/sources`
+- `PUT /api/v1/books/{isbn}`
 
-### Admin only
+### Admin
 
-| Method | Endpoint                       | Description                           |
-|--------|--------------------------------|---------------------------------------|
-| POST   | `/api/v1/admin/crawl`          | Trigger crawl for all enabled sources |
-| POST   | `/api/v1/admin/crawl/{source}` | Trigger crawl for a specific source   |
-| GET    | `/api/v1/admin/crawl/status`   | Get last 10 crawl job statuses        |
+- `POST /api/v1/admin/crawl`
+- `POST /api/v1/admin/crawl/{source}`
+- `GET /api/v1/admin/crawl/status`
 
 ### Internal (crawler only)
 
-Protected by `X-Internal-Key` header, not JWT.
+Protected by `X-Internal-Key`, not JWT.
 
-| Method | Endpoint                        | Description                |
-|--------|---------------------------------|----------------------------|
-| POST   | `/api/v1/internal/books/batch`  | Upsert a batch of books    |
-| GET    | `/api/v1/internal/books/exists` | Check if a book URL exists |
+- `POST /api/v1/internal/books/batch`
+- `GET /api/v1/internal/books/exists`
 
-## Database migrations
+## Database
 
-Managed by Flyway. Migrations run automatically on startup from
-`src/main/resources/db/migration/`.
+Schema changes are managed with Flyway migrations in:
 
-## Architecture
+```text
+src/main/resources/db/migration/
+```
 
-Libri API is the central service in the Libri ecosystem:
+Migrations run automatically on startup.
 
-- **[libri-crawler](https://github.com/masiama/libri-crawler)** scrapes book metadata and sends it here via the internal
-  API
-- Cover images are stored on local disk in a shared directory
+## Docker publishing
+
+The Gradle build includes Jib configuration for publishing an image to GHCR.
+
+If you use that flow, add credentials to `~/.gradle/gradle.properties`:
+
+```properties
+ghcr.username=your-github-username
+ghcr.token=your-github-token
+```
+
+The token needs `write:packages` scope.
