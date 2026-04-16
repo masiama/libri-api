@@ -49,13 +49,43 @@ Create the image directory before startup:
 mkdir -p "$IMAGES_DIR"
 ```
 
-## Running locally
+## Development
 
-Start the app:
+### Running locally
 
 ```bash
-./gradlew bootRun
+make
 ```
+
+This starts the following processes in parallel:
+
+* `bootRun` — runs the Spring Boot application
+* `build --continuous` — recompiles on file changes, triggering devtools hot reload
+
+If you also have a local clone of [libri-crawler](https://github.com/masiama/libri-crawler),
+you can enable automatic rebuilding of the crawler binary on file changes.
+
+### Optional: Crawler integration
+
+To enable crawler watching:
+
+1. Install `watchexec`:
+
+```bash
+brew install watchexec
+```
+
+2. Set `DEV_CRAWLER_DIR` in your `.env` to point to your local crawler repo:
+
+```bash
+DEV_CRAWLER_DIR=../libri-crawler
+```
+
+When configured, an additional process will run:
+
+* Crawler watcher — rebuilds the Go binary on file changes
+
+If `DEV_CRAWLER_DIR` is not set, the crawler watcher is skipped automatically and only the API runs.
 
 ## Authentication and authorization
 
