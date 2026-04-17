@@ -60,11 +60,18 @@ springBoot {
 }
 
 jib {
-	to {
-		image = "ghcr.io/masiama/libri-api"
-		auth {
-			username = findProperty("ghcr.username") as String? ?: ""
-			password = findProperty("ghcr.token") as String? ?: ""
+	container {
+		environment = mapOf(
+			"CRAWLER_BINARY_PATH" to "/usr/local/bin/crawler"
+		)
+	}
+
+	extraDirectories {
+		paths {
+			path {
+				setFrom(file(System.getProperty("crawlerDir") ?: "dist"))
+				into = "/usr/local/bin"
+			}
 		}
 	}
 }
