@@ -145,16 +145,3 @@ src/main/resources/db/migration/
 ```
 
 Migrations run automatically on startup.
-
-## Docker publishing
-
-The Gradle build includes Jib configuration for publishing an image to GHCR.
-
-If you use that flow, add credentials to `~/.gradle/gradle.properties`:
-
-```properties
-ghcr.username=your-github-username
-ghcr.token=your-github-token
-```
-
-The token needs `write:packages` scope.

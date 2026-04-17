@@ -1,0 +1,75 @@
+name: Build and Push API Image
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Get crawler version from Gradle
+        id: crawler
+        run: |
+          VERSION=$(grep crawlerVersion gradle.properties | cut -d'=' -f2)
+          echo "CRAWLER_VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull crawler image
+        run: |
+          docker pull ghcr.io/masiama/libri-crawler:${{ steps.crawler.outputs.CRAWLER_VERSION }}
+
+      - name: Extract crawler binary
+        run: |
+          container=$(docker create ghcr.io/masiama/libri-crawler:${{ steps.crawler.outputs.CRAWLER_VERSION }})
+          mkdir -p $RUNNER_TEMP/crawler
+          docker cp $container:/ko-app/crawler $RUNNER_TEMP/crawler/crawler
+          docker rm $container
+
+      - name: Prepare binary
+        run: chmod +x $RUNNER_TEMP/crawler/crawler
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - id: tags
+        run: |
+          TAGS=$(echo "${{ steps.meta.outputs.tags }}" | sed 's|.*:||' | paste -sd "," -)
+          echo "TAGS=$TAGS" >> $GITHUB_OUTPUT
+
+      - name: Build and push API image
+        run: |
+          ./gradlew jib -q \
+            -Djib.to.image=ghcr.io/${{ github.repository }} \
+            -Djib.to.auth.username=${{ github.actor }} \
+            -Djib.to.auth.password=${{ secrets.GITHUB_TOKEN }} \
+            -Djib.to.tags=${{ steps.tags.outputs.TAGS }} \
+            -DcrawlerDir=$RUNNER_TEMP/crawler
