@@ -55,14 +55,11 @@ tasks.withType<Test> {
 	useJUnitPlatform()
 }
 
-springBoot {
-	buildInfo()
-}
-
 jib {
 	container {
 		environment = mapOf(
-			"CRAWLER_BINARY_PATH" to "/usr/local/bin/crawler"
+			"CRAWLER_BINARY_PATH" to "/usr/local/bin/crawler",
+			"APP_VERSION" to (System.getProperty("version") ?: "dev")
 		)
 	}
 

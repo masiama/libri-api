@@ -51,7 +51,7 @@ jobs:
           java-version: 21
 
       - id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
@@ -65,6 +65,15 @@ jobs:
           TAGS=$(echo "${{ steps.meta.outputs.tags }}" | sed 's|.*:||' | paste -sd "," -)
           echo "TAGS=$TAGS" >> $GITHUB_OUTPUT
 
+      - name: Compute APP_VERSION
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "APP_VERSION=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+          else
+            echo "APP_VERSION=dev-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build and push API image
         run: |
           ./gradlew jib -q \
@@ -72,4 +81,5 @@ jobs:
             -Djib.to.auth.username=${{ github.actor }} \
             -Djib.to.auth.password=${{ secrets.GITHUB_TOKEN }} \
             -Djib.to.tags=${{ steps.tags.outputs.TAGS }} \
-            -DcrawlerDir=$RUNNER_TEMP/crawler
+            -DcrawlerDir=$RUNNER_TEMP/crawler \
+            -Dversion=${{ steps.version.outputs.APP_VERSION }}
