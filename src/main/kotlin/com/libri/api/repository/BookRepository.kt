@@ -14,18 +14,20 @@ interface BookRepository : JpaRepository<Book, String> {
 
 	@NativeQuery(
 		"""
-			SELECT * FROM books
-			WHERE
-			 title ILIKE (:title || '%')
-			 OR title ILIKE ('% ' || :title || '%')
-			 OR title % :title
-			 OR EXISTS (
-			 	SELECT 1 FROM jsonb_array_elements_text(authors) AS author
-			 	WHERE author ILIKE ('%' || :title || '%')
-			 )
-			ORDER BY
-			 (title ILIKE (:title || '%')) DESC,
-			 similarity(title, :title) DESC
+			SELECT * FROM (
+				SELECT *, source_name AS "sourcename" FROM books
+				WHERE
+				 title ILIKE (:title || '%')
+				 OR title ILIKE ('% ' || :title || '%')
+				 OR title % :title
+				 OR EXISTS (
+					SELECT 1 FROM jsonb_array_elements_text(authors) AS author
+					WHERE author ILIKE ('%' || :title || '%')
+				 )
+				ORDER BY
+				 (title ILIKE (:title || '%')) DESC,
+				 similarity(title, :title) DESC
+			) as results
 		""",
 		countQuery = """
 			SELECT count(1) FROM books
