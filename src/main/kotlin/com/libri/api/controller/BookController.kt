@@ -26,7 +26,11 @@ class BookController(private val bookRepository: BookRepository, private val boo
 		val book = bookRepository.findByIdOrNull(isbn) ?: return ResponseEntity.notFound().build()
 		return ResponseEntity.ok(book)
 	}
+}
 
+@RestController
+@RequestMapping("/api/v1/admin/books")
+class AdminBookController(private val bookService: BookService) {
 	@PostMapping
 	fun createBook(
 		@RequestPart("book") newBook: Book,

@@ -118,15 +118,15 @@ Internal crawler endpoints use `X-Internal-Key` instead of JWT authentication.
 
 ### Authenticated
 
-- `POST /api/v1/books`
 - `GET /api/v1/books`
 - `GET /api/v1/books/{isbn}`
 - `GET /api/v1/sources`
-- `PUT /api/v1/books/{isbn}`
-- `DELETE /api/v1/books/{isbn}`
 
 ### Admin
 
+- `POST /api/v1/admin/books`
+- `PUT /api/v1/admin/books/{isbn}`
+- `DELETE /api/v1/admin/books/{isbn}`
 - `POST /api/v1/admin/crawl`
 - `POST /api/v1/admin/crawl/{source}`
 - `GET /api/v1/admin/crawl/status`
