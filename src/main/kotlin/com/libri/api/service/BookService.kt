@@ -52,4 +52,23 @@ class BookService(
 
 		return bookRepository.save(updatedBook)
 	}
+
+	@Transactional
+	fun createBook(newBook: Book, image: MultipartFile): Book? {
+		if (bookRepository.existsById(newBook.isbn) || image.isEmpty) {
+			return null
+		}
+		
+		storageService.storeTransactional(newBook.isbn, image)
+
+		val createdBook = Book(
+			isbn = newBook.isbn,
+			title = newBook.title,
+			authors = newBook.authors,
+			url = newBook.url,
+			sourceName = newBook.sourceName
+		)
+
+		return bookRepository.save(createdBook)
+	}
 }
