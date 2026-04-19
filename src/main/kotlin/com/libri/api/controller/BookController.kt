@@ -45,4 +45,13 @@ class BookController(private val bookRepository: BookRepository, private val boo
 		val updatedBook = bookService.updateBook(isbn, newBook, image) ?: return ResponseEntity.notFound().build()
 		return ResponseEntity.ok(updatedBook)
 	}
+
+	@DeleteMapping("/{isbn}")
+	fun deleteBook(@PathVariable isbn: String): ResponseEntity<Void> {
+		if (!bookService.deleteBook(isbn)) {
+			return ResponseEntity.notFound().build()
+		}
+
+		return ResponseEntity.noContent().build()
+	}
 }

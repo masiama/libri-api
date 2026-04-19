@@ -50,6 +50,28 @@ class StorageService(
 		return file
 	}
 
+	fun deleteTransactional(isbn: String) {
+		val destination = storageConfig.resolveImagePath(isbn)
+		val previousContents = destination.takeIf(File::exists)?.readBytes()
+
+		destination.delete()
+
+		if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+			return
+		}
+
+		TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
+			override fun afterCompletion(status: Int) {
+				if (status != TransactionSynchronization.STATUS_ROLLED_BACK || previousContents == null) {
+					return
+				}
+
+				destination.parentFile?.mkdirs()
+				destination.writeBytes(previousContents)
+			}
+		})
+	}
+
 	private fun storeInternal(destination: File, file: MultipartFile) {
 		validateFile(file)
 
