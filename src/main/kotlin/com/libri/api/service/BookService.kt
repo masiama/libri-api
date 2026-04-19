@@ -58,7 +58,7 @@ class BookService(
 		if (bookRepository.existsById(newBook.isbn) || image.isEmpty) {
 			return null
 		}
-		
+
 		storageService.storeTransactional(newBook.isbn, image)
 
 		val createdBook = Book(
@@ -70,5 +70,16 @@ class BookService(
 		)
 
 		return bookRepository.save(createdBook)
+	}
+
+	@Transactional
+	fun deleteBook(isbn: String): Boolean {
+		if (!bookRepository.existsById(isbn)) {
+			return false
+		}
+
+		storageService.deleteTransactional(isbn)
+		bookRepository.deleteById(isbn)
+		return true
 	}
 }

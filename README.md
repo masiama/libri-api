@@ -123,6 +123,7 @@ Internal crawler endpoints use `X-Internal-Key` instead of JWT authentication.
 - `GET /api/v1/books/{isbn}`
 - `GET /api/v1/sources`
 - `PUT /api/v1/books/{isbn}`
+- `DELETE /api/v1/books/{isbn}`
 
 ### Admin
 
