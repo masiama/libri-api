@@ -27,6 +27,15 @@ class BookController(private val bookRepository: BookRepository, private val boo
 		return ResponseEntity.ok(book)
 	}
 
+	@PostMapping
+	fun createBook(
+		@RequestPart("book") newBook: Book,
+		@RequestPart("file") image: MultipartFile
+	): ResponseEntity<Book> {
+		val createdBook = bookService.createBook(newBook, image) ?: return ResponseEntity.status(409).build()
+		return ResponseEntity.ok(createdBook)
+	}
+
 	@PutMapping("/{isbn}")
 	fun updateBook(
 		@PathVariable isbn: String,
