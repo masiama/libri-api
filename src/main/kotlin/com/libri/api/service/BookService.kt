@@ -3,7 +3,6 @@ package com.libri.api.service
 import com.libri.api.entity.Book
 import com.libri.api.repository.BookRepository
 import com.libri.api.repository.SourceRepository
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
@@ -14,21 +13,26 @@ class BookService(
 	private val sourceRepository: SourceRepository,
 	private val storageService: StorageService,
 ) {
+	@Transactional
 	fun upsertBatch(books: List<Book>) {
-		books.forEach { incoming ->
-			val existing = bookRepository.findByIdOrNull(incoming.isbn)
+		if (books.isEmpty()) return
 
-			if (existing == null) {
-				bookRepository.save(incoming)
-				return@forEach
-			}
+		val existingBooksByIsbn = bookRepository.findAllById(books.map { it.isbn })
+			.associateBy(Book::isbn)
+		val sourcePriorities = sourceRepository.findAll()
+			.associate { it.name to it.priority }
 
-			val incomingPriority = sourceRepository.findByIdOrNull(incoming.sourceName)?.priority ?: Short.MAX_VALUE
-			val existingPriority = sourceRepository.findByIdOrNull(existing.sourceName)?.priority ?: Short.MAX_VALUE
+		val booksToSave = books.filter { incoming ->
+			val existing = existingBooksByIsbn[incoming.isbn] ?: return@filter true
 
-			if (incomingPriority <= existingPriority) {
-				bookRepository.save(incoming)
-			}
+			val incomingPriority = sourcePriorities[incoming.sourceName] ?: Short.MAX_VALUE
+			val existingPriority = sourcePriorities[existing.sourceName] ?: Short.MAX_VALUE
+
+			incomingPriority <= existingPriority
+		}
+
+		if (booksToSave.isNotEmpty()) {
+			bookRepository.saveAll(booksToSave)
 		}
 	}
 
