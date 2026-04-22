@@ -8,7 +8,7 @@ import java.security.MessageDigest
 
 @Configuration
 class StorageConfig {
-	@Value("\${libri.storage.images-dir}")
+	@Value($$"${libri.storage.images-dir}")
 	lateinit var imagesDir: String
 
 	@PostConstruct

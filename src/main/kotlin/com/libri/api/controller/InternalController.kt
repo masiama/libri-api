@@ -15,7 +15,7 @@ class InternalController(
 	private val bookService: BookService,
 	private val bookRepository: BookRepository
 ) {
-	@Value("\${libri.internal.api-key}")
+	@Value($$"${libri.internal.api-key}")
 	lateinit var apiKey: String
 
 	@PostMapping("/books/batch")

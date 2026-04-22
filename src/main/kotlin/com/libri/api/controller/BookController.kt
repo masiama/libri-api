@@ -12,7 +12,7 @@ import org.springframework.web.multipart.MultipartFile
 
 @RestController
 @RequestMapping("/api/v1/books")
-class BookController(private val bookRepository: BookRepository, private val bookService: BookService) {
+class BookController(private val bookRepository: BookRepository) {
 	@GetMapping
 	fun list(@RequestParam(required = false) filter: String?, pageable: Pageable): Page<Book> {
 		if (filter.isNullOrBlank()) {

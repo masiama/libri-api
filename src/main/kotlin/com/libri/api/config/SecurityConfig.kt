@@ -20,9 +20,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 @Configuration
 @EnableWebSecurity
 class SecurityConfig(
-	@Value("\${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
+	@Value($$"${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
 	private val jwkSetUri: String,
-	@Value("\${libri.cors.allowed-origins}")
+	@Value($$"${libri.cors.allowed-origins}")
 	private val allowedOrigins: String
 ) {
 

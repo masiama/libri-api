@@ -17,10 +17,10 @@ class CrawlerService(
 	private val crawlJobRepository: CrawlJobRepository,
 	private val sourceRepository: SourceRepository,
 ) {
-	@Value("\${libri.crawler.binary-path}")
+	@Value($$"${libri.crawler.binary-path}")
 	lateinit var crawlerBinaryPath: String
 
-	@Value("\${server.port}")
+	@Value($$"${server.port}")
 	lateinit var serverPort: String
 
 	private fun buildApiUrl() = "http://localhost:$serverPort"
