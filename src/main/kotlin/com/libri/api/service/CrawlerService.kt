@@ -45,7 +45,7 @@ class CrawlerService(
 		val job = crawlJobRepository.save(
 			CrawlJob(sourceName = sourceName)
 		)
-		crawlJobEventService.publish(job)
+		crawlJobEventService.publishStarted(job)
 
 		val errorLogBuilder = StringBuilder()
 
@@ -75,7 +75,7 @@ class CrawlerService(
 						if (booksFound != job.booksFound) {
 							job.booksFound = booksFound
 							crawlJobRepository.save(job)
-								.also(crawlJobEventService::publish)
+								.also(crawlJobEventService::publishUpdated)
 						}
 					}
 
@@ -106,7 +106,7 @@ class CrawlerService(
 			}
 
 			crawlJobRepository.save(job)
-				.also(crawlJobEventService::publish)
+				.also(crawlJobEventService::publishUpdated)
 		}
 	}
 }
