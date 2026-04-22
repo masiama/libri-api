@@ -16,6 +16,7 @@ private val objectMapper = jacksonObjectMapper()
 class CrawlerService(
 	private val crawlJobRepository: CrawlJobRepository,
 	private val sourceRepository: SourceRepository,
+	private val crawlJobEventService: CrawlJobEventService,
 ) {
 	@Value($$"${libri.crawler.binary-path}")
 	lateinit var crawlerBinaryPath: String
@@ -44,6 +45,7 @@ class CrawlerService(
 		val job = crawlJobRepository.save(
 			CrawlJob(sourceName = sourceName)
 		)
+		crawlJobEventService.publish(job)
 
 		val errorLogBuilder = StringBuilder()
 
@@ -73,6 +75,7 @@ class CrawlerService(
 						if (booksFound != job.booksFound) {
 							job.booksFound = booksFound
 							crawlJobRepository.save(job)
+								.also(crawlJobEventService::publish)
 						}
 					}
 
@@ -103,6 +106,7 @@ class CrawlerService(
 			}
 
 			crawlJobRepository.save(job)
+				.also(crawlJobEventService::publish)
 		}
 	}
 }
