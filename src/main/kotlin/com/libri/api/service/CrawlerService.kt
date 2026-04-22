@@ -60,6 +60,7 @@ class CrawlerService(
 					val log = objectMapper.readTree(line)
 
 					val msg = log["msg"]?.asString() ?: ""
+					val event = CrawlerLogEvent.from(msg)
 					val level = log["level"]?.asString() ?: "INFO"
 
 					if (level == "ERROR") {
@@ -67,8 +68,16 @@ class CrawlerService(
 						errorLogBuilder.appendLine("$msg: $err")
 					}
 
-					if (msg == "scraping completed") {
-						job.booksFound = log["total_books_processed"]?.asInt() ?: 0
+					if (event == CrawlerLogEvent.CRAWL_PROGRESS) {
+						val booksFound = log["books_found"]?.asInt() ?: 0
+						if (booksFound != job.booksFound) {
+							job.booksFound = booksFound
+							crawlJobRepository.save(job)
+						}
+					}
+
+					if (event == CrawlerLogEvent.CRAWL_COMPLETED) {
+						job.booksFound = log["books_found"]?.asInt() ?: 0
 					}
 				}
 			}
