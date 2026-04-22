@@ -129,7 +129,16 @@ Internal crawler endpoints use `X-Internal-Key` instead of JWT authentication.
 - `DELETE /api/v1/admin/books/{isbn}`
 - `POST /api/v1/admin/crawl`
 - `POST /api/v1/admin/crawl/{source}`
-- `GET /api/v1/admin/crawl/status`
+- `GET /api/v1/admin/crawl`
+- `GET /api/v1/admin/crawl/events`
+
+Book create and update requests use `multipart/form-data`:
+
+- `book` — JSON payload with book metadata
+- `file` — uploaded cover image
+
+On `POST /api/v1/admin/books`, `file` is required. On
+`PUT /api/v1/admin/books/{isbn}`, `file` is optional.
 
 ### Internal (crawler only)
 
