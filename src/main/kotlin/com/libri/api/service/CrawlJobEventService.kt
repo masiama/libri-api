@@ -14,15 +14,17 @@ class CrawlJobEventService {
 		val emitter = SseEmitter(Long.MAX_VALUE)
 
 		emitter.onCompletion { emitters.remove(emitter) }
-		emitter.onTimeout { emitters.remove(emitter) }
+		emitter.onTimeout {
+			emitter.complete()
+			emitters.remove(emitter)
+		}
 		emitter.onError { emitters.remove(emitter) }
 
 		try {
 			emitter.send(SseEmitter.event().name("connected").data("connected"))
 			emitters.add(emitter)
 		} catch (_: IOException) {
-			emitter.complete()
-			emitters.remove(emitter)
+			// Handled silently; listener will be removed by callbacks
 		}
 
 		return emitter
@@ -34,8 +36,14 @@ class CrawlJobEventService {
 				emitter.send(
 					SseEmitter.event().name("crawl-job-updated").data(job)
 				)
+			} catch (_: IOException) {
+				// Do NOT call emitter.complete() here.
+				// The browser refresh already triggered onCompletion/onTimeout.
+				// We just catch this to prevent the background thread from crashing.
+				emitters.remove(emitter)
 			} catch (e: Exception) {
 				emitter.completeWithError(e)
+				emitters.remove(emitter)
 			}
 		}
 	}
