@@ -1,11 +1,11 @@
 package com.libri.api.controller
 
-import com.libri.api.entity.CrawlJob
 import com.libri.api.repository.CrawlJobRepository
 import com.libri.api.repository.SourceRepository
 import com.libri.api.service.CrawlerService
-import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
+import org.springframework.data.web.PageableDefault
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -31,10 +31,7 @@ class CrawlerController(
 		return ResponseEntity.accepted().body("Crawl started for $source")
 	}
 
-	@GetMapping("/status")
-	fun status(): List<CrawlJob> {
-		return crawlJobRepository.findAll(
-			PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "startedAt"))
-		).content
-	}
+	@GetMapping
+	fun list(@PageableDefault(sort = ["startedAt"], direction = Sort.Direction.DESC) pageable: Pageable) =
+		crawlJobRepository.findAll(pageable)
 }
