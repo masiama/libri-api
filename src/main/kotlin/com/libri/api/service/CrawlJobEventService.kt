@@ -30,11 +30,15 @@ class CrawlJobEventService {
 		return emitter
 	}
 
-	fun publish(job: CrawlJob) {
+	fun publishStarted(job: CrawlJob) = publish("crawl-job-started", job)
+
+	fun publishUpdated(job: CrawlJob) = publish("crawl-job-updated", job)
+
+	private fun publish(eventName: String, job: CrawlJob) {
 		emitters.forEach { emitter ->
 			try {
 				emitter.send(
-					SseEmitter.event().name("crawl-job-updated").data(job)
+					SseEmitter.event().name(eventName).data(job)
 				)
 			} catch (_: IOException) {
 				// Do NOT call emitter.complete() here.
