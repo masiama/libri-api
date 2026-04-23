@@ -22,16 +22,23 @@ class CrawlerController(
 ) {
 	@PostMapping
 	fun triggerAll(): ResponseEntity<String> {
-		if (crawlerService.isRunning()) return ResponseEntity.status(409).body("A crawl is already running")
-		crawlerService.runAll()
-		return ResponseEntity.accepted().body("Crawl started for all enabled sources")
+		val enabledSources = sourceRepository.findAllByEnabledTrue()
+		val availableSources = enabledSources.filterNot { crawlerService.isRunning(it.name) }
+
+		if (availableSources.isEmpty()) {
+			return ResponseEntity.status(409).body("All enabled sources are already running")
+		}
+
+		availableSources.forEach { crawlerService.run(it.name) }
+		return ResponseEntity.accepted().body("Crawl started for ${availableSources.size} enabled sources")
 	}
 
 	@PostMapping("/{source}")
 	fun triggerSource(@PathVariable source: String): ResponseEntity<String> {
 		if (!sourceRepository.existsById(source)) return ResponseEntity.notFound().build()
-		if (crawlerService.isRunning()) return ResponseEntity.status(409).body("A crawl is already running")
-		crawlerService.runAsync(source)
+		if (crawlerService.isRunning(source)) return ResponseEntity.status(409)
+			.body("A crawl is already running for $source")
+		crawlerService.run(source)
 		return ResponseEntity.accepted().body("Crawl started for $source")
 	}
 
