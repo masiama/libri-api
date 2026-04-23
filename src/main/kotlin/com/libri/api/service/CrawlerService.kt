@@ -3,7 +3,6 @@ package com.libri.api.service
 import com.libri.api.entity.CrawlJob
 import com.libri.api.entity.CrawlStatus
 import com.libri.api.repository.CrawlJobRepository
-import com.libri.api.repository.SourceRepository
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
@@ -15,7 +14,6 @@ private val objectMapper = jacksonObjectMapper()
 @Service
 class CrawlerService(
 	private val crawlJobRepository: CrawlJobRepository,
-	private val sourceRepository: SourceRepository,
 	private val crawlJobEventService: CrawlJobEventService,
 ) {
 	@Value($$"${libri.crawler.binary-path}")
@@ -26,21 +24,10 @@ class CrawlerService(
 
 	private fun buildApiUrl() = "http://localhost:$serverPort"
 
-	fun isRunning(): Boolean =
-		crawlJobRepository.existsByStatus(CrawlStatus.RUNNING)
+	fun isRunning(sourceName: String): Boolean =
+		crawlJobRepository.existsByStatusAndSourceName(CrawlStatus.RUNNING, sourceName)
 
 	@Async
-	fun runAll() {
-		sourceRepository.findAllByEnabledTrue().forEach { source ->
-			run(source.name)
-		}
-	}
-
-	@Async
-	fun runAsync(sourceName: String) {
-		run(sourceName)
-	}
-
 	fun run(sourceName: String) {
 		val job = crawlJobRepository.save(
 			CrawlJob(sourceName = sourceName)
