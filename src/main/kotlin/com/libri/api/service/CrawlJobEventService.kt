@@ -1,6 +1,7 @@
 package com.libri.api.service
 
 import com.libri.api.entity.CrawlJob
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import java.io.IOException
@@ -11,20 +12,20 @@ class CrawlJobEventService {
 	private val emitters = CopyOnWriteArrayList<SseEmitter>()
 
 	fun subscribe(): SseEmitter {
-		val emitter = SseEmitter(Long.MAX_VALUE)
+		val emitter = SseEmitter(120_000L)
 
 		emitter.onCompletion { emitters.remove(emitter) }
-		emitter.onTimeout {
-			emitter.complete()
-			emitters.remove(emitter)
-		}
+		emitter.onTimeout { emitter.complete() }
 		emitter.onError { emitters.remove(emitter) }
 
+		emitters.add(emitter)
+
 		try {
+			emitter.send(SseEmitter.event().comment("prime"))
 			emitter.send(SseEmitter.event().name("connected").data("connected"))
-			emitters.add(emitter)
-		} catch (_: IOException) {
-			// Handled silently; listener will be removed by callbacks
+		} catch (e: IOException) {
+			emitters.remove(emitter)
+			emitter.completeWithError(e)
 		}
 
 		return emitter
@@ -49,6 +50,16 @@ class CrawlJobEventService {
 				emitter.completeWithError(e)
 				emitters.remove(emitter)
 			}
+		}
+	}
+
+	@Scheduled(fixedDelay = 15_000)
+	fun sendHeartbeat() {
+		emitters.removeIf { emitter ->
+			runCatching {
+				emitter.send(SseEmitter.event().comment("heartbeat"))
+				false
+			}.isFailure
 		}
 	}
 }
