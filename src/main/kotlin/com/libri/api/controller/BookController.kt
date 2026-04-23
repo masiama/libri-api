@@ -58,4 +58,13 @@ class AdminBookController(private val bookService: BookService) {
 
 		return ResponseEntity.noContent().build()
 	}
+
+	@DeleteMapping("/bulk")
+	fun deleteBooks(@RequestBody isbns: List<String>): ResponseEntity<Void> {
+		if (!bookService.deleteBooks(isbns)) {
+			return ResponseEntity.notFound().build()
+		}
+
+		return ResponseEntity.noContent().build()
+	}
 }
