@@ -3,8 +3,8 @@
 Kotlin/Spring Boot backend for the Libri catalog.
 
 It stores book metadata in PostgreSQL, serves cover images from local storage,
-exposes authenticated endpoints for the admin UI, and provides internal endpoints
-used by the crawler.
+exposes authenticated endpoints for the admin UI, provides internal endpoints
+used by the crawler, and manages a purgatory queue for books with invalid ISBNs.
 
 ## Stack
 
@@ -131,6 +131,9 @@ Internal crawler endpoints use `X-Internal-Key` instead of JWT authentication.
 - `POST /api/v1/admin/crawl/{source}`
 - `GET /api/v1/admin/crawl`
 - `GET /api/v1/admin/crawl/events`
+- `GET /api/v1/admin/purgatory`
+- `POST /api/v1/admin/purgatory/{id}/approve`
+- `DELETE /api/v1/admin/purgatory/{id}`
 
 Book create and update requests use `multipart/form-data`:
 
