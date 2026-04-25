@@ -12,7 +12,7 @@ class Book(
 	@Column(nullable = false)
 	val title: String,
 
-	@Column(columnDefinition = "jsonb")
+	@Column(columnDefinition = "jsonb", nullable = false)
 	@Convert(converter = StringListConverter::class)
 	val authors: List<String> = emptyList(),
 

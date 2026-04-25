@@ -22,26 +22,7 @@ class StorageService(
 		val previousContents = destination.takeIf(File::exists)?.readBytes()
 
 		storeInternal(destination, file)
-
-		if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-			return
-		}
-
-		TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
-			override fun afterCompletion(status: Int) {
-				if (status != TransactionSynchronization.STATUS_ROLLED_BACK) {
-					return
-				}
-
-				destination.parentFile?.mkdirs()
-				if (previousContents == null) {
-					destination.delete()
-					return
-				}
-
-				destination.writeBytes(previousContents)
-			}
-		})
+		registerRollback(destination, previousContents)
 	}
 
 	fun load(isbn: String): File {
@@ -72,6 +53,17 @@ class StorageService(
 		})
 	}
 
+	fun copyImageTransactional(fromIsbn: String, toIsbn: String) {
+		val source = storageConfig.resolveImagePath(fromIsbn)
+		val destination = storageConfig.resolveImagePath(toIsbn)
+		val previousContents = destination.takeIf(File::exists)?.readBytes()
+
+		destination.parentFile?.mkdirs()
+		source.copyTo(destination, overwrite = true)
+
+		registerRollback(destination, previousContents)
+	}
+
 	private fun storeInternal(destination: File, file: MultipartFile) {
 		validateFile(file)
 
@@ -94,6 +86,25 @@ class StorageService(
 		if (contentType !in allowedTypes) {
 			throw IllegalArgumentException("Unsupported file type: $contentType")
 		}
+	}
+
+	private fun registerRollback(destination: File, previousContents: ByteArray?) {
+		if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+			return
+		}
+
+		TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
+			override fun afterCompletion(status: Int) {
+				if (status != TransactionSynchronization.STATUS_ROLLED_BACK) return
+
+				destination.parentFile?.mkdirs()
+				if (previousContents == null) {
+					destination.delete()
+					return
+				}
+				destination.writeBytes(previousContents)
+			}
+		})
 	}
 
 	companion object {

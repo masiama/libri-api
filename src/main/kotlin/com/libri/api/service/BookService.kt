@@ -2,8 +2,12 @@ package com.libri.api.service
 
 import com.libri.api.config.StorageConfig
 import com.libri.api.entity.Book
+import com.libri.api.entity.PurgatoryBook
 import com.libri.api.repository.BookRepository
+import com.libri.api.repository.PurgatoryBookRepository
 import com.libri.api.repository.SourceRepository
+import com.libri.api.util.IsbnValidator
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionSynchronization
@@ -14,6 +18,7 @@ import java.io.File
 @Service
 class BookService(
 	private val bookRepository: BookRepository,
+	private val purgatoryBookRepository: PurgatoryBookRepository,
 	private val sourceRepository: SourceRepository,
 	private val storageService: StorageService,
 	private val storageConfig: StorageConfig,
@@ -22,22 +27,76 @@ class BookService(
 	fun upsertBatch(books: List<Book>) {
 		if (books.isEmpty()) return
 
-		val existingBooksByIsbn = bookRepository.findAllById(books.map { it.isbn })
-			.associateBy(Book::isbn)
-		val sourcePriorities = sourceRepository.findAll()
-			.associate { it.name to it.priority }
+		val (validBooks, invalidBooks) = books.partition { IsbnValidator.isValid(it.isbn) }
 
-		val booksToSave = books.filter { incoming ->
-			val existing = existingBooksByIsbn[incoming.isbn] ?: return@filter true
+		if (validBooks.isNotEmpty()) {
+			val existingByIsbn = bookRepository.findAllById(validBooks.map { it.isbn })
+				.associateBy(Book::isbn)
+			val sourcePriorities = sourceRepository.findAll()
+				.associate { it.name to it.priority }
 
-			val incomingPriority = sourcePriorities[incoming.sourceName] ?: Short.MAX_VALUE
-			val existingPriority = sourcePriorities[existing.sourceName] ?: Short.MAX_VALUE
+			val booksToSave = validBooks
+				.filter { incoming ->
+					val existing = existingByIsbn[incoming.isbn] ?: return@filter true
+					val incomingPriority = sourcePriorities[incoming.sourceName] ?: Short.MAX_VALUE
+					val existingPriority = sourcePriorities[existing.sourceName] ?: Short.MAX_VALUE
+					incomingPriority <= existingPriority
+				}
 
-			incomingPriority <= existingPriority
+			if (booksToSave.isNotEmpty()) bookRepository.saveAll(booksToSave)
 		}
 
-		if (booksToSave.isNotEmpty()) {
-			bookRepository.saveAll(booksToSave)
+		if (invalidBooks.isNotEmpty()) {
+			val existingPurgatory = purgatoryBookRepository
+				.findAllByInvalidIsbnIn(invalidBooks.map { it.isbn })
+				.groupBy { it.invalidIsbn }
+			val sourcePriorities = sourceRepository.findAll()
+				.associate { it.name to it.priority }
+
+			val purgatoryToSave = mutableListOf<PurgatoryBook>()
+			val booksToUpdate = mutableListOf<Book>()
+
+			invalidBooks.forEach { incoming ->
+				val existing = existingPurgatory[incoming.isbn]
+					?.firstOrNull { it.sourceName == incoming.sourceName }
+
+				if (existing == null) {
+					purgatoryToSave.add(
+						PurgatoryBook(
+							invalidIsbn = incoming.isbn,
+							title = incoming.title,
+							authors = incoming.authors,
+							url = incoming.url,
+							sourceName = incoming.sourceName,
+						)
+					)
+				} else {
+					existing.title = incoming.title
+					existing.authors = incoming.authors
+					existing.url = incoming.url
+					purgatoryToSave.add(existing)
+
+					existing.resolvedIsbn?.let { resolvedIsbn ->
+						val book = bookRepository.findByIdOrNull(resolvedIsbn) ?: return@let
+						val incomingPriority = sourcePriorities[incoming.sourceName] ?: Short.MAX_VALUE
+						val existingPriority = sourcePriorities[book.sourceName] ?: Short.MAX_VALUE
+						if (incomingPriority <= existingPriority) {
+							booksToUpdate.add(
+								Book(
+									isbn = resolvedIsbn,
+									title = incoming.title,
+									authors = incoming.authors,
+									url = incoming.url,
+									sourceName = incoming.sourceName,
+								)
+							)
+						}
+					}
+				}
+			}
+
+			if (purgatoryToSave.isNotEmpty()) purgatoryBookRepository.saveAll(purgatoryToSave)
+			if (booksToUpdate.isNotEmpty()) bookRepository.saveAll(booksToUpdate)
 		}
 	}
 
@@ -127,6 +186,7 @@ class BookService(
 
 							trashDir.deleteRecursively()
 						}
+
 						else -> trashDir.deleteRecursively()
 					}
 				}
