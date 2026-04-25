@@ -16,8 +16,12 @@ class PurgatoryController(
 	private val purgatoryService: PurgatoryService,
 ) {
 	@GetMapping
-	fun list(pageable: Pageable): Page<PurgatoryBook> =
-		purgatoryBookRepository.findAllByResolvedIsbnIsNullAndDeletedFalse(pageable)
+	fun list(@RequestParam(required = false) filter: String?, pageable: Pageable): Page<PurgatoryBook> {
+		if (filter.isNullOrBlank()) {
+			return purgatoryBookRepository.findAllByResolvedIsbnIsNullAndDeletedFalse(pageable)
+		}
+		return purgatoryBookRepository.findAllByTitleAndResolvedIsbnIsNullAndDeletedFalse(filter, pageable)
+	}
 
 	@PostMapping("/{id}/approve")
 	fun approve(
