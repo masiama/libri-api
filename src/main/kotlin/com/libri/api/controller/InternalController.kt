@@ -1,20 +1,17 @@
 package com.libri.api.controller
 
-import com.libri.api.entity.Book
-import com.libri.api.repository.BookRepository
+import com.libri.api.dto.BookDTO
 import com.libri.api.service.BookService
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
-data class BookBatchRequest(val books: List<Book>)
+data class BookBatchRequest(val books: List<BookDTO>)
+data class BookExistsResponse(val exists: Boolean)
 
 @RestController
 @RequestMapping("/api/v1/internal")
-class InternalController(
-	private val bookService: BookService,
-	private val bookRepository: BookRepository
-) {
+class InternalController(private val bookService: BookService) {
 	@Value($$"${libri.internal.api-key}")
 	lateinit var apiKey: String
 
@@ -32,9 +29,8 @@ class InternalController(
 	fun bookExists(
 		@RequestHeader("X-Internal-Key") key: String,
 		@RequestParam url: String,
-	): ResponseEntity<Map<String, Boolean>> {
+	): ResponseEntity<BookExistsResponse> {
 		if (key != apiKey) return ResponseEntity.status(401).build()
-		val exists = bookRepository.existsByUrl(url)
-		return ResponseEntity.ok(mapOf("exists" to exists))
+		return ResponseEntity.ok(BookExistsResponse(bookService.existsByUrl(url)))
 	}
 }
