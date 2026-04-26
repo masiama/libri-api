@@ -1,11 +1,14 @@
 package com.libri.api.service
 
+import com.libri.api.dto.PurgatoryBookDTO
+import com.libri.api.dto.toDTO
 import com.libri.api.entity.Book
-import com.libri.api.entity.PurgatoryBook
 import com.libri.api.repository.BookRepository
 import com.libri.api.repository.PurgatoryBookRepository
 import com.libri.api.repository.SourceRepository
 import com.libri.api.util.IsbnValidator
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -17,8 +20,15 @@ class PurgatoryService(
 	private val sourceRepository: SourceRepository,
 	private val storageService: StorageService,
 ) {
+	fun list(pageable: Pageable, filter: String?): Page<PurgatoryBookDTO> {
+		val books =
+			if (filter.isNullOrBlank()) purgatoryBookRepository.findAllByResolvedIsbnIsNullAndDeletedFalse(pageable)
+			else purgatoryBookRepository.findAllByTitleAndResolvedIsbnIsNullAndDeletedFalse(filter, pageable)
+		return books.map { it.toDTO() }
+	}
+
 	@Transactional
-	fun approve(id: Long, newIsbn: String): PurgatoryBook? {
+	fun approve(id: Long, newIsbn: String): PurgatoryBookDTO? {
 		if (!IsbnValidator.isValid(newIsbn)) return null
 
 		val purgatoryBook = purgatoryBookRepository.findByIdOrNull(id) ?: return null
@@ -59,7 +69,7 @@ class PurgatoryService(
 
 		storageService.copyImageTransactional(purgatoryBook.invalidIsbn, newIsbn)
 
-		return saved
+		return saved.toDTO()
 	}
 
 	@Transactional

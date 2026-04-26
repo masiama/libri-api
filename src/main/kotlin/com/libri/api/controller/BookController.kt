@@ -1,31 +1,27 @@
 package com.libri.api.controller
 
-import com.libri.api.entity.Book
-import com.libri.api.repository.BookRepository
+import com.libri.api.dto.BookDTO
 import com.libri.api.service.BookService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
+data class BookBatchDeleteRequest(val isbns: List<String>)
+
 @RestController
 @RequestMapping("/api/v1/books")
-class BookController(private val bookRepository: BookRepository) {
+class BookController(private val bookService: BookService) {
 	@GetMapping
-	fun list(@RequestParam(required = false) filter: String?, pageable: Pageable): Page<Book> {
-		if (filter.isNullOrBlank()) {
-			return bookRepository.findAll(pageable)
-		}
-		return bookRepository.searchByTitle(filter, pageable)
-	}
+	fun list(@RequestParam(required = false) filter: String?, pageable: Pageable): Page<BookDTO> =
+		bookService.list(pageable, filter)
 
 	@GetMapping("/{isbn}")
-	fun getByIsbn(@PathVariable isbn: String): ResponseEntity<Book> {
-		val book = bookRepository.findByIdOrNull(isbn) ?: return ResponseEntity.notFound().build()
-		return ResponseEntity.ok(book)
-	}
+	fun getByIsbn(@PathVariable isbn: String): ResponseEntity<BookDTO> =
+		bookService.getByIsbn(isbn)?.let {
+			ResponseEntity.ok(it)
+		} ?: ResponseEntity.notFound().build()
 }
 
 @RestController
@@ -33,38 +29,30 @@ class BookController(private val bookRepository: BookRepository) {
 class AdminBookController(private val bookService: BookService) {
 	@PostMapping
 	fun createBook(
-		@RequestPart("book") newBook: Book,
+		@RequestPart("book") newBook: BookDTO,
 		@RequestPart("file") image: MultipartFile
-	): ResponseEntity<Book> {
-		val createdBook = bookService.createBook(newBook, image) ?: return ResponseEntity.status(409).build()
-		return ResponseEntity.ok(createdBook)
-	}
+	): ResponseEntity<BookDTO> =
+		bookService.createBook(newBook, image)?.let {
+			ResponseEntity.ok(it)
+		} ?: ResponseEntity.notFound().build()
 
 	@PutMapping("/{isbn}")
 	fun updateBook(
 		@PathVariable isbn: String,
-		@RequestPart("book") newBook: Book,
+		@RequestPart("book") newBook: BookDTO,
 		@RequestPart("file", required = false) image: MultipartFile?
-	): ResponseEntity<Book> {
-		val updatedBook = bookService.updateBook(isbn, newBook, image) ?: return ResponseEntity.notFound().build()
-		return ResponseEntity.ok(updatedBook)
-	}
+	): ResponseEntity<BookDTO> =
+		bookService.updateBook(isbn, newBook, image)?.let {
+			ResponseEntity.ok(it)
+		} ?: ResponseEntity.notFound().build()
 
 	@DeleteMapping("/{isbn}")
-	fun deleteBook(@PathVariable isbn: String): ResponseEntity<Void> {
-		if (!bookService.deleteBook(isbn)) {
-			return ResponseEntity.notFound().build()
-		}
-
-		return ResponseEntity.noContent().build()
-	}
+	fun deleteBook(@PathVariable isbn: String): ResponseEntity<Void> =
+		if (bookService.deleteBook(isbn)) ResponseEntity.noContent().build()
+		else ResponseEntity.notFound().build()
 
 	@DeleteMapping("/bulk")
-	fun deleteBooks(@RequestBody isbns: List<String>): ResponseEntity<Void> {
-		if (!bookService.deleteBooks(isbns)) {
-			return ResponseEntity.notFound().build()
-		}
-
-		return ResponseEntity.noContent().build()
-	}
+	fun deleteBooks(@RequestBody request: BookBatchDeleteRequest): ResponseEntity<Void> =
+		if (bookService.deleteBooks(request.isbns)) ResponseEntity.noContent().build()
+		else ResponseEntity.notFound().build()
 }

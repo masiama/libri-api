@@ -1,12 +1,17 @@
 package com.libri.api.service
 
 import com.libri.api.config.StorageConfig
+import com.libri.api.dto.BookDTO
+import com.libri.api.dto.toDTO
+import com.libri.api.dto.toEntity
 import com.libri.api.entity.Book
 import com.libri.api.entity.PurgatoryBook
 import com.libri.api.repository.BookRepository
 import com.libri.api.repository.PurgatoryBookRepository
 import com.libri.api.repository.SourceRepository
 import com.libri.api.util.IsbnValidator
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -23,11 +28,24 @@ class BookService(
 	private val storageService: StorageService,
 	private val storageConfig: StorageConfig,
 ) {
+	fun list(pageable: Pageable, filter: String?): Page<BookDTO> {
+		val books =
+			if (filter.isNullOrBlank()) bookRepository.findAll(pageable)
+			else bookRepository.searchByTitle(filter, pageable)
+		return books.map { it.toDTO() }
+	}
+
+	fun getByIsbn(isbn: String): BookDTO? = bookRepository.findByIdOrNull(isbn)?.toDTO()
+	
+	fun existsByUrl(url: String): Boolean = bookRepository.existsByUrl(url)
+
 	@Transactional
-	fun upsertBatch(books: List<Book>) {
+	fun upsertBatch(books: List<BookDTO>) {
 		if (books.isEmpty()) return
 
-		val (validBooks, invalidBooks) = books.partition { IsbnValidator.isValid(it.isbn) }
+		val (validBooks, invalidBooks) = books
+			.map { it.toEntity() }
+			.partition { IsbnValidator.isValid(it.isbn) }
 
 		if (validBooks.isNotEmpty()) {
 			val existingByIsbn = bookRepository.findAllById(validBooks.map { it.isbn })
@@ -101,7 +119,7 @@ class BookService(
 	}
 
 	@Transactional
-	fun updateBook(isbn: String, newBook: Book, image: MultipartFile?): Book? {
+	fun updateBook(isbn: String, newBook: BookDTO, image: MultipartFile?): BookDTO? {
 		if (!bookRepository.existsById(isbn)) {
 			return null
 		}
@@ -110,34 +128,18 @@ class BookService(
 			storageService.storeTransactional(isbn, image)
 		}
 
-		val updatedBook = Book(
-			isbn = isbn,
-			title = newBook.title,
-			authors = newBook.authors,
-			url = newBook.url,
-			sourceName = newBook.sourceName
-		)
-
-		return bookRepository.save(updatedBook)
+		val updatedBook = newBook.copy(isbn = isbn).toEntity()
+		return bookRepository.save(updatedBook).toDTO()
 	}
 
 	@Transactional
-	fun createBook(newBook: Book, image: MultipartFile): Book? {
+	fun createBook(newBook: BookDTO, image: MultipartFile): BookDTO? {
 		if (bookRepository.existsById(newBook.isbn) || image.isEmpty) {
 			return null
 		}
 
 		storageService.storeTransactional(newBook.isbn, image)
-
-		val createdBook = Book(
-			isbn = newBook.isbn,
-			title = newBook.title,
-			authors = newBook.authors,
-			url = newBook.url,
-			sourceName = newBook.sourceName
-		)
-
-		return bookRepository.save(createdBook)
+		return bookRepository.save(newBook.toEntity()).toDTO()
 	}
 
 	@Transactional

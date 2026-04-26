@@ -1,9 +1,13 @@
 package com.libri.api.service
 
+import com.libri.api.dto.CrawlJobDTO
+import com.libri.api.dto.toDTO
 import com.libri.api.entity.CrawlJob
 import com.libri.api.entity.CrawlStatus
 import com.libri.api.repository.CrawlJobRepository
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import tools.jackson.module.kotlin.jacksonObjectMapper
@@ -23,6 +27,9 @@ class CrawlerService(
 	lateinit var serverPort: String
 
 	private fun buildApiUrl() = "http://localhost:$serverPort"
+
+	fun listJobs(pageable: Pageable): Page<CrawlJobDTO> =
+		crawlJobRepository.findAll(pageable).map { it.toDTO() }
 
 	fun isRunning(sourceName: String): Boolean =
 		crawlJobRepository.existsByStatusAndSourceName(CrawlStatus.RUNNING, sourceName)
