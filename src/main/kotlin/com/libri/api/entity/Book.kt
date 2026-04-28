@@ -1,6 +1,8 @@
 package com.libri.api.entity
 
 import com.libri.api.converter.StringListConverter
+import com.libri.api.dto.BarcodeDTO
+import com.libri.api.dto.BookDTO
 import jakarta.persistence.*
 
 @Entity
@@ -21,4 +23,6 @@ class Book(
 
 	@Column(name = "source_name", nullable = false)
 	val sourceName: String,
-)
+) {
+	fun toDTO(barcodes: List<BarcodeDTO>) = BookDTO(isbn, title, authors, url, sourceName, barcodes)
+}

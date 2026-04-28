@@ -1,5 +1,6 @@
 package com.libri.api.entity
 
+import com.libri.api.dto.SourceDTO
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
@@ -16,4 +17,6 @@ class Source(
 
 	@Column(nullable = false)
 	val enabled: Boolean = true,
-)
+) {
+	fun toDTO() = SourceDTO(name, enabled)
+}

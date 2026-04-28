@@ -1,5 +1,6 @@
 package com.libri.api.entity
 
+import com.libri.api.dto.BarcodeDTO
 import jakarta.persistence.*
 import java.io.Serializable
 
@@ -29,4 +30,6 @@ class Barcode(
 	@Id
 	@Column(name = "source_name", nullable = false)
 	val sourceName: String,
-)
+) {
+	fun toDTO(): BarcodeDTO = BarcodeDTO(value, type)
+}

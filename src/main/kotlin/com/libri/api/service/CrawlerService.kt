@@ -1,7 +1,6 @@
 package com.libri.api.service
 
 import com.libri.api.dto.CrawlJobDTO
-import com.libri.api.dto.toDTO
 import com.libri.api.entity.CrawlJob
 import com.libri.api.entity.CrawlStatus
 import com.libri.api.repository.CrawlJobRepository

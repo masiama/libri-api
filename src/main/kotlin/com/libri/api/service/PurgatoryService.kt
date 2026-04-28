@@ -1,9 +1,7 @@
 package com.libri.api.service
 
 import com.libri.api.dto.PurgatoryBookDTO
-import com.libri.api.dto.toDTO
 import com.libri.api.entity.Barcode
-import com.libri.api.entity.Book
 import com.libri.api.repository.*
 import com.libri.api.util.IsbnValidator
 import org.springframework.data.domain.Page
@@ -43,26 +41,10 @@ class PurgatoryService(
 		if (existing != null) {
 			val existingPriority = sourcePriorities[existing.sourceName] ?: Short.MAX_VALUE
 			if (incomingPriority <= existingPriority) {
-				bookRepository.save(
-					Book(
-						isbn = existing.isbn,
-						title = purgatoryBook.title,
-						authors = purgatoryBook.authors,
-						url = purgatoryBook.url,
-						sourceName = purgatoryBook.sourceName,
-					)
-				)
+				bookRepository.save(purgatoryBook.toBook(existing.isbn))
 			}
 		} else {
-			bookRepository.save(
-				Book(
-					isbn = newIsbn,
-					title = purgatoryBook.title,
-					authors = purgatoryBook.authors,
-					url = purgatoryBook.url,
-					sourceName = purgatoryBook.sourceName,
-				)
-			)
+			bookRepository.save(purgatoryBook.toBook(newIsbn))
 		}
 
 		purgatoryBarcodeRepository
