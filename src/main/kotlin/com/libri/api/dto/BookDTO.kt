@@ -11,7 +11,7 @@ data class BookDTO(
 	val sourceName: String,
 	val barcodes: List<BarcodeDTO>,
 ) {
-	fun toEntity() = Book(isbn, title, authors, url, sourceName)
+	fun toEntity(isbn: String = this.isbn) = Book(isbn, title, authors, url, sourceName)
 	fun toPurgatoryEntity() = PurgatoryBook(
 		invalidIsbn = isbn, title = title, authors = authors, url = url, sourceName = sourceName
 	)
