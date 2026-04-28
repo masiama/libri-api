@@ -8,7 +8,8 @@ data class BookDTO(
 	val authors: List<String>,
 	val url: String,
 	val sourceName: String,
+	val barcodes: List<BarcodeDTO>,
 )
 
 fun BookDTO.toEntity() = Book(isbn, title, authors, url, sourceName)
-fun Book.toDTO() = BookDTO(isbn, title, authors, url, sourceName)
+fun Book.toDTO(barcodes: List<BarcodeDTO>) = BookDTO(isbn, title, authors, url, sourceName, barcodes)

@@ -2,10 +2,9 @@ package com.libri.api.service
 
 import com.libri.api.dto.PurgatoryBookDTO
 import com.libri.api.dto.toDTO
+import com.libri.api.entity.Barcode
 import com.libri.api.entity.Book
-import com.libri.api.repository.BookRepository
-import com.libri.api.repository.PurgatoryBookRepository
-import com.libri.api.repository.SourceRepository
+import com.libri.api.repository.*
 import com.libri.api.util.IsbnValidator
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -16,7 +15,9 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class PurgatoryService(
 	private val purgatoryBookRepository: PurgatoryBookRepository,
+	private val purgatoryBarcodeRepository: PurgatoryBarcodeRepository,
 	private val bookRepository: BookRepository,
+	private val barcodeRepository: BarcodeRepository,
 	private val sourceRepository: SourceRepository,
 	private val storageService: StorageService,
 ) {
@@ -63,6 +64,12 @@ class PurgatoryService(
 				)
 			)
 		}
+
+		purgatoryBarcodeRepository
+			.findAllByPurgatoryId(id)
+			.map { Barcode(it.value, it.type, newIsbn, it.sourceName) }
+			.let { barcodeRepository.saveAll(it) }
+		purgatoryBarcodeRepository.deleteAllByPurgatoryId(id)
 
 		purgatoryBook.resolvedIsbn = newIsbn
 		val saved = purgatoryBookRepository.save(purgatoryBook)
