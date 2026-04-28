@@ -1,5 +1,6 @@
 package com.libri.api.entity
 
+import com.libri.api.dto.CrawlJobDTO
 import jakarta.persistence.*
 import java.time.LocalDateTime
 
@@ -32,4 +33,6 @@ class CrawlJob(
 
 	@Column(name = "error_message")
 	var errorMessage: String? = null,
-)
+) {
+	fun toDTO() = CrawlJobDTO(id, sourceName, startedAt, finishedAt, status, booksFound, errorMessage)
+}

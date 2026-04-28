@@ -2,8 +2,6 @@ package com.libri.api.service
 
 import com.libri.api.config.StorageConfig
 import com.libri.api.dto.BookDTO
-import com.libri.api.dto.toDTO
-import com.libri.api.dto.toEntity
 import com.libri.api.entity.Barcode
 import com.libri.api.entity.Book
 import com.libri.api.entity.PurgatoryBarcode
@@ -136,15 +134,7 @@ class BookService(
 				purgatoryBarcodeRepository.saveAll(purgatoryBarcodes)
 			}
 			if (purgatoryToInsert.isNotEmpty()) {
-				val purgatoryBooks = purgatoryToInsert.map {
-					PurgatoryBook(
-						invalidIsbn = it.isbn,
-						title = it.title,
-						authors = it.authors,
-						url = it.url,
-						sourceName = it.sourceName,
-					)
-				}
+				val purgatoryBooks = purgatoryToInsert.map { it.toPurgatoryEntity() }
 				val savedPurgatoryBooks =
 					purgatoryBookRepository
 						.saveAll(purgatoryBooks)

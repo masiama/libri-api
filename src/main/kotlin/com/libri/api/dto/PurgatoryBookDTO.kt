@@ -1,6 +1,5 @@
 package com.libri.api.dto
 
-import com.libri.api.entity.PurgatoryBook
 import java.time.LocalDateTime
 
 data class PurgatoryBookDTO(
@@ -12,5 +11,3 @@ data class PurgatoryBookDTO(
 	val sourceName: String,
 	val createdAt: LocalDateTime = LocalDateTime.now(),
 )
-
-fun PurgatoryBook.toDTO() = PurgatoryBookDTO(id, invalidIsbn, title, authors, url, sourceName, createdAt)

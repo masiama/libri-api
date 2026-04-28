@@ -1,6 +1,7 @@
 package com.libri.api.entity
 
 import com.libri.api.converter.StringListConverter
+import com.libri.api.dto.PurgatoryBookDTO
 import jakarta.persistence.*
 import java.time.LocalDateTime
 
@@ -35,4 +36,7 @@ class PurgatoryBook(
 
 	@Column(nullable = false)
 	var deleted: Boolean = false
-)
+) {
+	fun toBook(isbn: String) = Book(isbn, title, authors, url, sourceName)
+	fun toDTO() = PurgatoryBookDTO(id, invalidIsbn, title, authors, url, sourceName, createdAt)
+}
