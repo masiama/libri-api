@@ -71,15 +71,15 @@ To enable crawler watching:
 
 1. Install `watchexec`:
 
-```bash
-brew install watchexec
-```
+    ```bash
+    brew install watchexec
+    ```
 
 2. Set `DEV_CRAWLER_DIR` in your `.env` to point to your local crawler repo:
 
-```bash
-DEV_CRAWLER_DIR=../libri-crawler
-```
+    ```bash
+    DEV_CRAWLER_DIR=../libri-crawler
+    ```
 
 When configured, an additional process will run:
 
