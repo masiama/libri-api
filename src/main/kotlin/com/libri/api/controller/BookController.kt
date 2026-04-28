@@ -17,9 +17,9 @@ class BookController(private val bookService: BookService) {
 	fun list(@RequestParam(required = false) filter: String?, pageable: Pageable): Page<BookDTO> =
 		bookService.list(pageable, filter)
 
-	@GetMapping("/{isbn}")
-	fun getByIsbn(@PathVariable isbn: String): ResponseEntity<BookDTO> =
-		bookService.getByIsbn(isbn)?.let {
+	@GetMapping("/{code}")
+	fun getByIsbn(@PathVariable code: String): ResponseEntity<BookDTO> =
+		bookService.getByCode(code)?.let {
 			ResponseEntity.ok(it)
 		} ?: ResponseEntity.notFound().build()
 }
