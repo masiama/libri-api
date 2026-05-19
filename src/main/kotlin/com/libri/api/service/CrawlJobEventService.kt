@@ -31,16 +31,22 @@ class CrawlJobEventService {
 		return emitter
 	}
 
-	fun publishStarted(job: CrawlJob) = publish("crawl-job-started", job)
+	fun publishStarted() = publish("crawl-job-started", null)
 
 	fun publishUpdated(job: CrawlJob) = publish("crawl-job-updated", job)
 
-	private fun publish(eventName: String, job: CrawlJob) {
+	fun publishProgress(crawlId: Long, booksFound: Int) {
+		publish("crawl-job-progress", mapOf("id" to crawlId, "booksFound" to booksFound))
+	}
+
+	private fun publish(eventName: String, data: Any?) {
 		emitters.forEach { emitter ->
 			try {
-				emitter.send(
-					SseEmitter.event().name(eventName).data(job)
-				)
+				val builder = SseEmitter.event().name(eventName)
+				if (data != null) {
+					builder.data(data)
+				}
+				emitter.send(builder)
 			} catch (_: IOException) {
 				// Do NOT call emitter.complete() here.
 				// The browser refresh already triggered onCompletion/onTimeout.

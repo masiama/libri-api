@@ -4,7 +4,7 @@ import com.libri.api.dto.BarcodeDTO
 import jakarta.persistence.*
 import java.io.Serializable
 
-class BarcodeId(
+data class BarcodeId(
 	val value: String = "",
 	val type: String = "",
 	val isbn: String = "",

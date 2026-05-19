@@ -30,6 +30,7 @@ dependencies {
 	implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+	implementation("org.springframework.boot:spring-boot-starter-data-redis")
 	runtimeOnly("org.postgresql:postgresql")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-flyway-test")
@@ -37,6 +38,7 @@ dependencies {
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
+	developmentOnly("io.netty:netty-resolver-dns-native-macos::osx-aarch_64")
 }
 
 kotlin {
@@ -56,19 +58,13 @@ tasks.withType<Test> {
 }
 
 jib {
+	from {
+		image = "gcr.io/distroless/java21-debian12"
+	}
+	
 	container {
 		environment = mapOf(
-			"CRAWLER_BINARY_PATH" to "/usr/local/bin/crawler",
 			"APP_VERSION" to (System.getProperty("version") ?: "dev")
 		)
-	}
-
-	extraDirectories {
-		paths {
-			path {
-				setFrom(file(System.getProperty("crawlerDir") ?: "dist"))
-				into = "/usr/local/bin"
-			}
-		}
 	}
 }

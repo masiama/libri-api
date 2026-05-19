@@ -46,8 +46,6 @@ class BookService(
 		return bookRepository.findByIdOrNull(barcode.isbn)?.let { toDTO(it) }
 	}
 
-	fun existsByUrl(url: String): Boolean = bookRepository.existsByUrl(url)
-
 	@Transactional
 	fun upsertBatch(books: List<BookDTO>) {
 		if (books.isEmpty()) return

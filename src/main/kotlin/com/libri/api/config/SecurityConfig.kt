@@ -35,7 +35,6 @@ class SecurityConfig(
 			.authorizeHttpRequests { auth ->
 				auth
 					.requestMatchers("/api/v1/ping").permitAll()
-					.requestMatchers("/api/v1/internal/**").permitAll()
 					.requestMatchers("/api/v1/images/**").permitAll()
 					.requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 					.anyRequest().authenticated()

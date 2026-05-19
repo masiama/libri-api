@@ -3,7 +3,7 @@ package com.libri.api.entity
 import jakarta.persistence.*
 import java.io.Serializable
 
-class PurgatoryBarcodeId(
+data class PurgatoryBarcodeId(
 	val value: String = "",
 	val type: String = "",
 	val purgatoryId: Long = 0,

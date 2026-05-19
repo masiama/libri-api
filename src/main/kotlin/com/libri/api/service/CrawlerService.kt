@@ -3,29 +3,40 @@ package com.libri.api.service
 import com.libri.api.dto.CrawlJobDTO
 import com.libri.api.entity.CrawlJob
 import com.libri.api.entity.CrawlStatus
+import com.libri.api.repository.BookRepository
 import com.libri.api.repository.CrawlJobRepository
-import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.context.event.EventListener
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import tools.jackson.module.kotlin.jacksonObjectMapper
-import java.time.LocalDateTime
 
-private val objectMapper = jacksonObjectMapper()
+val objectMapper = jacksonObjectMapper()
+
+data class CrawlerCommand(val crawlId: Long, val source: String) {
+	fun toJson(): String = objectMapper.writeValueAsString(this)
+}
 
 @Service
 class CrawlerService(
 	private val crawlJobRepository: CrawlJobRepository,
 	private val crawlJobEventService: CrawlJobEventService,
+	private val bookRepository: BookRepository,
+	private val redisTemplate: StringRedisTemplate,
 ) {
-	@Value($$"${libri.crawler.binary-path}")
-	lateinit var crawlerBinaryPath: String
+	private val cacheKeyExistingUrls = "books:existing_urls"
 
-	@Value($$"${server.port}")
-	lateinit var serverPort: String
-
-	private fun buildApiUrl() = "http://localhost:$serverPort"
+	@EventListener(ApplicationReadyEvent::class)
+	fun populateUrlCacheOnStart() {
+		val urls = bookRepository.findAllUrls()
+		if (urls.isNotEmpty()) {
+			redisTemplate.delete(cacheKeyExistingUrls)
+			redisTemplate.opsForSet().add(cacheKeyExistingUrls, *urls.toTypedArray())
+		}
+	}
 
 	fun listJobs(pageable: Pageable): Page<CrawlJobDTO> =
 		crawlJobRepository.findAll(pageable).map { it.toDTO() }
@@ -38,68 +49,15 @@ class CrawlerService(
 		val job = crawlJobRepository.save(
 			CrawlJob(sourceName = sourceName)
 		)
-		crawlJobEventService.publishStarted(job)
-
-		val errorLogBuilder = StringBuilder()
+		crawlJobEventService.publishStarted()
 
 		try {
-			val process = ProcessBuilder(crawlerBinaryPath, "--source", sourceName)
-				.redirectErrorStream(true)
-				.apply { environment()["API_URL"] = buildApiUrl() }
-				.start()
-
-			process.inputStream.bufferedReader().use { reader ->
-				reader.forEachLine { line ->
-					if (line.isBlank()) return@forEachLine
-
-					val log = objectMapper.readTree(line)
-
-					val msg = log["msg"]?.asString() ?: ""
-					val event = CrawlerLogEvent.from(msg)
-					val level = log["level"]?.asString() ?: "INFO"
-
-					if (level == "ERROR") {
-						val err = log["error"]?.asString() ?: "Unknown Error"
-						errorLogBuilder.appendLine("$msg: $err")
-					}
-
-					if (event == CrawlerLogEvent.CRAWL_PROGRESS) {
-						val booksFound = log["books_found"]?.asInt() ?: 0
-						if (booksFound != job.booksFound) {
-							job.booksFound = booksFound
-							crawlJobRepository.save(job)
-								.also(crawlJobEventService::publishUpdated)
-						}
-					}
-
-					if (event == CrawlerLogEvent.CRAWL_COMPLETED) {
-						job.booksFound = log["books_found"]?.asInt() ?: 0
-					}
-				}
-			}
-
-			val exitCode = process.waitFor()
-
-			if (exitCode == 0) {
-				job.status = CrawlStatus.SUCCESS
-			} else {
-				job.status = CrawlStatus.FAILED
-				errorLogBuilder.appendLine("Process exited with code $exitCode")
-			}
+			val command = CrawlerCommand(crawlId = job.id, source = sourceName)
+			redisTemplate.opsForList().leftPush("crawler:commands", command.toJson())
 		} catch (e: Exception) {
 			job.status = CrawlStatus.FAILED
-
-			val exceptionMsg = e.localizedMessage ?: e.javaClass.simpleName
-			errorLogBuilder.appendLine("System Failure: $exceptionMsg")
-		} finally {
-			job.finishedAt = LocalDateTime.now()
-
-			if (errorLogBuilder.isNotEmpty()) {
-				job.errorMessage = errorLogBuilder.toString().take(2000)
-			}
-
-			crawlJobRepository.save(job)
-				.also(crawlJobEventService::publishUpdated)
+			job.errorMessage = "Failed to dispatch command to message queue: ${e.localizedMessage}"
+			crawlJobRepository.save(job).also(crawlJobEventService::publishUpdated)
 		}
 	}
 }

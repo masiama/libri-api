@@ -1,24 +1,10 @@
-.PHONY: dev-boot dev-build dev-crawler
-
--include .env
-export
+.PHONY: dev-boot dev-build
 
 default:
-	make -j3 dev-boot dev-build dev-crawler
+	make -j3 dev-boot dev-build
 
 dev-boot:
 	@./gradlew bootRun
 
 dev-build:
 	@./gradlew build --continuous --quiet
-
-dev-crawler:
-	@bash -c '\
-		if [ -n "$$DEV_CRAWLER_DIR" ]; then \
-			echo "Starting crawler dev environment..."; \
-			cd "$$DEV_CRAWLER_DIR" && \
-			exec watchexec -c -- make build; \
-		else \
-			echo "DEV_CRAWLER_DIR not set, skipping crawler watch"; \
-		fi; \
-	'
