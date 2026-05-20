@@ -61,6 +61,14 @@ class CrawlerEventListener(
 				}
 			}
 
+			is CrawlerEvent.CrawlErrorEvent -> {
+				val job = crawlJobRepository.findById(event.crawlId).orElse(null) ?: return
+				val updated = if (job.errorMessage.isNullOrBlank()) event.error
+				else "${job.errorMessage}\n${event.error}"
+				job.errorMessage = updated.take(10000)
+				crawlJobRepository.save(job).also(crawlJobEventService::publishUpdated)
+			}
+
 			is CrawlerEvent.CompletedEvent -> {
 				flushBooks()
 
