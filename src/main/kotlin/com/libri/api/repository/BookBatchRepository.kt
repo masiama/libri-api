@@ -1,6 +1,7 @@
 package com.libri.api.repository
 
 import com.libri.api.entity.Book
+import jakarta.annotation.PostConstruct
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Repository
 import tools.jackson.databind.ObjectMapper
@@ -18,22 +19,40 @@ data class BookBarcodeReplacement(
 
 @Repository
 class BookBatchRepository(
+	private val sourceRepository: SourceRepository,
 	private val jdbcTemplate: JdbcTemplate,
 	private val objectMapper: ObjectMapper,
 ) {
+	private lateinit var sourcePriorities: Map<String, Short>
+
+	@PostConstruct
+	fun loadPriorities() {
+		sourcePriorities = sourceRepository.findAll().associate { it.name to it.priority }
+	}
+
 	fun upsertBooks(rows: List<Book>) {
 		if (rows.isEmpty()) return
 
+		val deduped = rows
+			.groupBy { it.isbn }
+			.values
+			.map { duplicates ->
+				duplicates.minByOrNull { sourcePriorities[it.sourceName] ?: Short.MIN_VALUE }!!
+			}
+
 		jdbcTemplate.update { conn ->
 			conn.prepareStatement(UPSERT_BOOKS_SQL).apply {
-				setArray(1, conn.createArrayOf("text", rows.map { it.isbn }.toTypedArray()))
-				setArray(2, conn.createArrayOf("text", rows.map { it.title }.toTypedArray()))
+				setArray(1, conn.createArrayOf("text", deduped.map { it.isbn }.toTypedArray()))
+				setArray(2, conn.createArrayOf("text", deduped.map { it.title }.toTypedArray()))
 				setArray(
 					3,
-					conn.createArrayOf("text", rows.map { objectMapper.writeValueAsString(it.authors) }.toTypedArray())
+					conn.createArrayOf(
+						"text",
+						deduped.map { objectMapper.writeValueAsString(it.authors) }.toTypedArray()
+					)
 				)
-				setArray(4, conn.createArrayOf("text", rows.map { it.url }.toTypedArray()))
-				setArray(5, conn.createArrayOf("text", rows.map { it.sourceName }.toTypedArray()))
+				setArray(4, conn.createArrayOf("text", deduped.map { it.url }.toTypedArray()))
+				setArray(5, conn.createArrayOf("text", deduped.map { it.sourceName }.toTypedArray()))
 			}
 		}
 	}
