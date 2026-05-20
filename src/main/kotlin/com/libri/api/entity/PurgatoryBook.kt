@@ -3,7 +3,7 @@ package com.libri.api.entity
 import com.libri.api.converter.StringListConverter
 import com.libri.api.dto.PurgatoryBookDTO
 import jakarta.persistence.*
-import java.time.LocalDateTime
+import java.time.Instant
 
 @Entity
 @Table(name = "purgatory")
@@ -32,7 +32,7 @@ class PurgatoryBook(
 	var resolvedIsbn: String? = null,
 
 	@Column(name = "created_at", nullable = false, updatable = false)
-	val createdAt: LocalDateTime = LocalDateTime.now(),
+	val createdAt: Instant = Instant.now(),
 
 	@Column(nullable = false)
 	var deleted: Boolean = false

@@ -9,8 +9,7 @@ import jakarta.annotation.PreDestroy
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.stereotype.Component
 import java.time.Duration
-import java.time.LocalDateTime
-import java.util.concurrent.ConcurrentHashMap
+import java.time.Instant
 import kotlin.concurrent.thread
 
 @Component
@@ -19,12 +18,11 @@ class CrawlerEventListener(
 	private val crawlJobRepository: CrawlJobRepository,
 	private val crawlJobEventService: CrawlJobEventService,
 	private val bookService: BookService,
+	private val progressTracker: CrawlProgressTracker
 ) {
 	private var running = true
 	private val batchSizeThreshold = 300
 	private val bookBuffer = mutableListOf<BookDTO>()
-	private var lastDbProgressWrite = ConcurrentHashMap<Long, Long>()
-	private val dbWriteInternalMs = 10_000L
 
 	@PostConstruct
 	fun startListening() {
@@ -52,13 +50,7 @@ class CrawlerEventListener(
 
 			is CrawlerEvent.ProgressEvent -> {
 				crawlJobEventService.publishProgress(event.crawlId, event.booksFound)
-
-				val now = System.currentTimeMillis()
-				val last = lastDbProgressWrite[event.crawlId] ?: 0L
-				if (now - last >= dbWriteInternalMs) {
-					lastDbProgressWrite[event.crawlId] = now
-					crawlJobRepository.updateBooksFound(event.crawlId, event.booksFound)
-				}
+				progressTracker.update(event.crawlId, event.booksFound)
 			}
 
 			is CrawlerEvent.CrawlErrorEvent -> {
@@ -75,8 +67,9 @@ class CrawlerEventListener(
 				val job = crawlJobRepository.findById(event.crawlId).orElse(null) ?: return
 				job.status = CrawlStatus.SUCCESS
 				job.booksFound = event.booksFound
-				job.finishedAt = LocalDateTime.now()
+				job.finishedAt = Instant.now()
 				crawlJobRepository.save(job).also(crawlJobEventService::publishUpdated)
+				progressTracker.clear(job.id)
 			}
 
 			is CrawlerEvent.ErrorEvent -> {
@@ -85,8 +78,9 @@ class CrawlerEventListener(
 				val job = crawlJobRepository.findById(event.crawlId).orElse(null) ?: return
 				job.status = CrawlStatus.FAILED
 				job.errorMessage = event.error.take(2000)
-				job.finishedAt = LocalDateTime.now()
+				job.finishedAt = Instant.now()
 				crawlJobRepository.save(job).also(crawlJobEventService::publishUpdated)
+				progressTracker.clear(job.id)
 			}
 		}
 

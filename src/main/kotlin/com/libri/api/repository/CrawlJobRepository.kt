@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 
 @Repository
 interface CrawlJobRepository : JpaRepository<CrawlJob, Long> {
@@ -14,6 +15,28 @@ interface CrawlJobRepository : JpaRepository<CrawlJob, Long> {
 
 	@Modifying
 	@Transactional
-	@Query("update CrawlJob c set c.booksFound = :booksFound where c.id = :id")
-	fun updateBooksFound(id: Long, booksFound: Int): Int
+	@Query(
+		"""
+			UPDATE CrawlJob j SET j.booksFound = :count, j.lastHeartbeatAt = :now 
+			WHERE j.id = :id
+		"""
+	)
+	fun updateProgressHeartbeat(id: Long, count: Int, now: Instant = Instant.now())
+
+	@Query(
+		"""
+			SELECT j FROM CrawlJob j
+			WHERE j.status = :status
+			AND (
+				(j.lastHeartbeatAt IS NOT NULL AND j.lastHeartbeatAt < :threshold)
+				OR
+				(j.lastHeartbeatAt IS NULL AND j.startedAt < :startedThreshold)
+			)
+		"""
+	)
+	fun findStaleJobs(
+		threshold: Instant,
+		startedThreshold: Instant,
+		status: CrawlStatus = CrawlStatus.RUNNING
+	): List<CrawlJob>
 }

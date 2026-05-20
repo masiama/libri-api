@@ -2,7 +2,7 @@ package com.libri.api.entity
 
 import com.libri.api.dto.CrawlJobDTO
 import jakarta.persistence.*
-import java.time.LocalDateTime
+import java.time.Instant
 
 enum class CrawlStatus {
 	RUNNING, SUCCESS, FAILED
@@ -19,10 +19,10 @@ class CrawlJob(
 	val sourceName: String,
 
 	@Column(name = "started_at", nullable = false)
-	val startedAt: LocalDateTime = LocalDateTime.now(),
+	val startedAt: Instant = Instant.now(),
 
 	@Column(name = "finished_at")
-	var finishedAt: LocalDateTime? = null,
+	var finishedAt: Instant? = null,
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
@@ -33,6 +33,9 @@ class CrawlJob(
 
 	@Column(name = "error_message")
 	var errorMessage: String? = null,
+
+	@Column(name = "last_heartbeat_at")
+	var lastHeartbeatAt: Instant? = null
 ) {
 	fun toDTO() = CrawlJobDTO(id, sourceName, startedAt, finishedAt, status, booksFound, errorMessage)
 }
