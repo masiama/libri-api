@@ -77,7 +77,6 @@ REDIS_PORT=6373
 
 CLERK_JWKS_URL=https://example.clerk.accounts.dev/.well-known/jwks.json
 IMAGES_DIR=/path/to/images
-CORS_ALLOWED_ORIGINS=http://localhost:3000
 ```
 
 Create the image directory before startup:
