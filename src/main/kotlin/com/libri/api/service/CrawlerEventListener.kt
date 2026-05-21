@@ -1,20 +1,19 @@
 package com.libri.api.service
 
+import com.libri.api.config.fromJson
 import com.libri.api.dto.BookDTO
 import com.libri.api.dto.CrawlerEvent
 import com.libri.api.entity.CrawlStatus
 import com.libri.api.repository.CrawlJobRepository
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
-import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.stereotype.Component
-import java.time.Duration
 import java.time.Instant
 import kotlin.concurrent.thread
 
 @Component
 class CrawlerEventListener(
-	private val redisTemplate: StringRedisTemplate,
+	private val redisService: RedisService,
 	private val crawlJobRepository: CrawlJobRepository,
 	private val crawlJobEventService: CrawlJobEventService,
 	private val bookService: BookService,
@@ -29,8 +28,8 @@ class CrawlerEventListener(
 		thread(start = true, isDaemon = true, name = "crawler-event-consumer") {
 			while (running) {
 				try {
-					val result = redisTemplate.opsForList().rightPop("crawl:events", Duration.ofSeconds(5)) ?: continue
-					val event = objectMapper.readValue(result, CrawlerEvent::class.java)
+					val result = redisService.readCrawlEvent() ?: continue
+					val event = result.fromJson<CrawlerEvent>()
 					processUnifiedEvent(event)
 				} catch (_: Exception) {
 					Thread.sleep(2000)

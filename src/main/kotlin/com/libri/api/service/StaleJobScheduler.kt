@@ -3,7 +3,6 @@ package com.libri.api.service
 import com.libri.api.entity.CrawlStatus
 import com.libri.api.repository.CrawlJobRepository
 import org.slf4j.LoggerFactory
-import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.Instant
@@ -13,7 +12,7 @@ import java.time.temporal.ChronoUnit
 class StaleJobScheduler(
 	private val crawlJobRepository: CrawlJobRepository,
 	private val crawlJobEventService: CrawlJobEventService,
-	private val redisTemplate: StringRedisTemplate,
+	private val redisService: RedisService,
 	private val progressTracker: CrawlProgressTracker
 ) {
 	private val logger = LoggerFactory.getLogger(StaleJobScheduler::class.java)
@@ -33,7 +32,7 @@ class StaleJobScheduler(
 			job.finishedAt = Instant.now()
 			job.booksFound = progressTracker.get(job.id) ?: job.booksFound
 			crawlJobRepository.save(job).also(crawlJobEventService::publishUpdated)
-			redisTemplate.delete("lock:crawler:${job.sourceName}")
+			redisService.deleteSourceLock(job.sourceName)
 			progressTracker.clear(job.id)
 			logger.info("Killed stale job ${job.id} for source ${job.sourceName}, lock released")
 		}

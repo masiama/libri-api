@@ -12,30 +12,18 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
-import tools.jackson.module.kotlin.jacksonObjectMapper
-
-val objectMapper = jacksonObjectMapper()
-
-data class CrawlerCommand(val crawlId: Long, val source: String) {
-	fun toJson(): String = objectMapper.writeValueAsString(this)
-}
 
 @Service
 class CrawlerService(
 	private val crawlJobRepository: CrawlJobRepository,
 	private val crawlJobEventService: CrawlJobEventService,
 	private val bookRepository: BookRepository,
-	private val redisTemplate: StringRedisTemplate,
+	private val redisService: RedisService,
 ) {
-	private val cacheKeyExistingUrls = "books:existing_urls"
-
 	@EventListener(ApplicationReadyEvent::class)
 	fun populateUrlCacheOnStart() {
 		val urls = bookRepository.findAllUrls()
-		if (urls.isNotEmpty()) {
-			redisTemplate.delete(cacheKeyExistingUrls)
-			redisTemplate.opsForSet().add(cacheKeyExistingUrls, *urls.toTypedArray())
-		}
+		if (urls.isNotEmpty()) redisService.resetExistingUrls(urls)
 	}
 
 	fun listJobs(pageable: Pageable): Page<CrawlJobDTO> =
@@ -52,8 +40,7 @@ class CrawlerService(
 		crawlJobEventService.publishStarted()
 
 		try {
-			val command = CrawlerCommand(crawlId = job.id, source = sourceName)
-			redisTemplate.opsForList().leftPush("crawler:commands", command.toJson())
+			redisService.pushCrawlJob(job)
 		} catch (e: Exception) {
 			job.status = CrawlStatus.FAILED
 			job.errorMessage = "Failed to dispatch command to message queue: ${e.localizedMessage}"
