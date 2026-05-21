@@ -48,4 +48,11 @@ class CrawlerController(
 
 	@GetMapping("/events", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
 	fun events(): SseEmitter = crawlJobEventService.subscribe()
+
+	@PostMapping("/{id}/cancel")
+	fun cancelJob(@PathVariable id: Long): ResponseEntity<String> {
+		val sourceName = crawlerService.getRunningSourceNameById(id) ?: return ResponseEntity.notFound().build()
+		crawlerService.startCancel(sourceName)
+		return ResponseEntity.accepted().body("Cancel request for $sourceName sent")
+	}
 }

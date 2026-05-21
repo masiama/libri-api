@@ -1,0 +1,1 @@
+ALTER TYPE crawl_status ADD VALUE 'CANCELLED';

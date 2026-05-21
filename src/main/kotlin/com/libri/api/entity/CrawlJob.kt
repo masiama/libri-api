@@ -5,7 +5,7 @@ import jakarta.persistence.*
 import java.time.Instant
 
 enum class CrawlStatus {
-	RUNNING, SUCCESS, FAILED
+	RUNNING, SUCCESS, FAILED, CANCELLED
 }
 
 @Entity

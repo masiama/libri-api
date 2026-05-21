@@ -9,7 +9,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
-import org.springframework.data.redis.core.StringRedisTemplate
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 
@@ -31,6 +31,13 @@ class CrawlerService(
 
 	fun isRunning(sourceName: String): Boolean =
 		crawlJobRepository.existsByStatusAndSourceName(CrawlStatus.RUNNING, sourceName)
+
+	fun getRunningSourceNameById(id: Long): String? =
+		crawlJobRepository.findByIdOrNull(id)
+			?.takeIf { it.status == CrawlStatus.RUNNING }
+			?.sourceName
+
+	fun startCancel(sourceName: String) = redisService.startCancel(sourceName)
 
 	@Async
 	fun run(sourceName: String) {

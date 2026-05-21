@@ -15,6 +15,12 @@ class RedisService(private val redisTemplate: StringRedisTemplate) {
 	fun readCrawlEvent(): String? =
 		redisTemplate.opsForList().rightPop("crawl:events", Duration.ofSeconds(5))
 
+	fun startCancel(sourceName: String) =
+		redisTemplate.opsForValue().set("crawl:cancel:${sourceName}", "1")
+
+	fun stopCancel(sourceName: String): Boolean? =
+		redisTemplate.delete("crawl:cancel:${sourceName}")
+
 	fun resetExistingUrls(urls: List<String>) {
 		redisTemplate.delete(cacheKeyExistingUrls)
 		redisTemplate.opsForSet().add(cacheKeyExistingUrls, *urls.toTypedArray())

@@ -81,6 +81,18 @@ class CrawlerEventListener(
 				crawlJobRepository.save(job).also(crawlJobEventService::publishUpdated)
 				progressTracker.clear(job.id)
 			}
+
+			is CrawlerEvent.CancelledEvent -> {
+				flushBooks()
+
+				val job = crawlJobRepository.findById(event.crawlId).orElse(null) ?: return
+				job.status = CrawlStatus.CANCELLED
+				job.booksFound = event.booksFound
+				job.finishedAt = Instant.now()
+				crawlJobRepository.save(job).also(crawlJobEventService::publishUpdated)
+				progressTracker.clear(job.id)
+				redisService.stopCancel(job.sourceName)
+			}
 		}
 
 	}
