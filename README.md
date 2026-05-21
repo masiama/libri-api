@@ -72,8 +72,7 @@ DB_NAME=libri
 DB_USER=libri
 DB_PASS=secret
 
-REDIS_HOST=localhost
-REDIS_PORT=6373
+REDIS_URL=redis://localhost:6379
 
 CLERK_JWKS_URL=https://example.clerk.accounts.dev/.well-known/jwks.json
 IMAGES_DIR=/path/to/images

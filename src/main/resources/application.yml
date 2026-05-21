@@ -20,8 +20,7 @@ spring:
           jwk-set-uri: ${CLERK_JWKS_URL}
   data:
     redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
+      url: ${REDIS_URL}
 
 server:
   port: 8080
