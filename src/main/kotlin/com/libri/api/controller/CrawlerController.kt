@@ -1,6 +1,7 @@
 package com.libri.api.controller
 
 import com.libri.api.dto.CrawlJobDTO
+import com.libri.api.dto.CrawlJobErrorDTO
 import com.libri.api.service.CrawlJobEventService
 import com.libri.api.service.CrawlerService
 import com.libri.api.service.SourceService
@@ -55,4 +56,8 @@ class CrawlerController(
 		crawlerService.startCancel(sourceName)
 		return ResponseEntity.accepted().body("Cancel request for $sourceName sent")
 	}
+
+	@GetMapping("/{id}/errors")
+	fun getErrors(@PathVariable id: Long, pageable: Pageable): Page<CrawlJobErrorDTO> =
+		crawlerService.getErrorsById(id, pageable)
 }

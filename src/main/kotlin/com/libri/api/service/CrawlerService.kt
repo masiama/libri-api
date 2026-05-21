@@ -1,9 +1,11 @@
 package com.libri.api.service
 
 import com.libri.api.dto.CrawlJobDTO
+import com.libri.api.dto.CrawlJobErrorDTO
 import com.libri.api.entity.CrawlJob
 import com.libri.api.entity.CrawlStatus
 import com.libri.api.repository.BookRepository
+import com.libri.api.repository.CrawlJobErrorRepository
 import com.libri.api.repository.CrawlJobRepository
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service
 @Service
 class CrawlerService(
 	private val crawlJobRepository: CrawlJobRepository,
+	private val crawlJobErrorRepository: CrawlJobErrorRepository,
 	private val crawlJobEventService: CrawlJobEventService,
 	private val bookRepository: BookRepository,
 	private val redisService: RedisService,
@@ -26,8 +29,13 @@ class CrawlerService(
 		if (urls.isNotEmpty()) redisService.resetExistingUrls(urls)
 	}
 
-	fun listJobs(pageable: Pageable): Page<CrawlJobDTO> =
-		crawlJobRepository.findAll(pageable).map { it.toDTO() }
+	fun listJobs(pageable: Pageable): Page<CrawlJobDTO> {
+		val jobs = crawlJobRepository.findAll(pageable)
+		val errorCounts = crawlJobErrorRepository
+			.countsByCrawlJobIds(jobs.content.map { it.id })
+			.associate { it.crawlJobId to it.count }
+		return jobs.map { it.toDTO(errorCounts[it.id]) }
+	}
 
 	fun isRunning(sourceName: String): Boolean =
 		crawlJobRepository.existsByStatusAndSourceName(CrawlStatus.RUNNING, sourceName)
@@ -38,6 +46,9 @@ class CrawlerService(
 			?.sourceName
 
 	fun startCancel(sourceName: String) = redisService.startCancel(sourceName)
+
+	fun getErrorsById(id: Long, pageable: Pageable): Page<CrawlJobErrorDTO> =
+		crawlJobErrorRepository.findAllByCrawlJobId(id, pageable).map { it.toDTO() }
 
 	@Async
 	fun run(sourceName: String) {

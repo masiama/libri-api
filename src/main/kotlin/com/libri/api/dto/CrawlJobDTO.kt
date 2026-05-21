@@ -11,4 +11,5 @@ data class CrawlJobDTO(
 	var status: CrawlStatus,
 	var booksFound: Int,
 	var errorMessage: String?,
+	var errorCount: Long = 0
 )

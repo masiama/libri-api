@@ -3,7 +3,9 @@ package com.libri.api.service
 import com.libri.api.config.fromJson
 import com.libri.api.dto.BookDTO
 import com.libri.api.dto.CrawlerEvent
+import com.libri.api.entity.CrawlJobError
 import com.libri.api.entity.CrawlStatus
+import com.libri.api.repository.CrawlJobErrorRepository
 import com.libri.api.repository.CrawlJobRepository
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
@@ -15,6 +17,7 @@ import kotlin.concurrent.thread
 class CrawlerEventListener(
 	private val redisService: RedisService,
 	private val crawlJobRepository: CrawlJobRepository,
+	private val crawlJobErrorRepository: CrawlJobErrorRepository,
 	private val crawlJobEventService: CrawlJobEventService,
 	private val bookService: BookService,
 	private val progressTracker: CrawlProgressTracker
@@ -53,21 +56,22 @@ class CrawlerEventListener(
 			}
 
 			is CrawlerEvent.CrawlErrorEvent -> {
-				val job = crawlJobRepository.findById(event.crawlId).orElse(null) ?: return
-				val updated = if (job.errorMessage.isNullOrBlank()) event.error
-				else "${job.errorMessage}\n${event.error}"
-				job.errorMessage = updated.take(10000)
-				crawlJobRepository.save(job).also(crawlJobEventService::publishUpdated)
+				crawlJobErrorRepository.save(
+					CrawlJobError(crawlJobId = event.crawlId, message = event.error, url = event.url)
+				)
 			}
 
 			is CrawlerEvent.CompletedEvent -> {
 				flushBooks()
 
 				val job = crawlJobRepository.findById(event.crawlId).orElse(null) ?: return
+				val errorCount = crawlJobErrorRepository.countByCrawlJobId(event.crawlId)
 				job.status = CrawlStatus.SUCCESS
 				job.booksFound = event.booksFound
 				job.finishedAt = Instant.now()
-				crawlJobRepository.save(job).also(crawlJobEventService::publishUpdated)
+				crawlJobRepository.save(job).also {
+					crawlJobEventService.publishUpdated(it, errorCount)
+				}
 				progressTracker.clear(job.id)
 			}
 
@@ -75,10 +79,13 @@ class CrawlerEventListener(
 				flushBooks()
 
 				val job = crawlJobRepository.findById(event.crawlId).orElse(null) ?: return
+				val errorCount = crawlJobErrorRepository.countByCrawlJobId(event.crawlId)
 				job.status = CrawlStatus.FAILED
 				job.errorMessage = event.error.take(2000)
 				job.finishedAt = Instant.now()
-				crawlJobRepository.save(job).also(crawlJobEventService::publishUpdated)
+				crawlJobRepository.save(job).also {
+					crawlJobEventService.publishUpdated(it, errorCount)
+				}
 				progressTracker.clear(job.id)
 			}
 
@@ -86,10 +93,13 @@ class CrawlerEventListener(
 				flushBooks()
 
 				val job = crawlJobRepository.findById(event.crawlId).orElse(null) ?: return
+				val errorCount = crawlJobErrorRepository.countByCrawlJobId(event.crawlId)
 				job.status = CrawlStatus.CANCELLED
 				job.booksFound = event.booksFound
 				job.finishedAt = Instant.now()
-				crawlJobRepository.save(job).also(crawlJobEventService::publishUpdated)
+				crawlJobRepository.save(job).also {
+					crawlJobEventService.publishUpdated(it, errorCount)
+				}
 				progressTracker.clear(job.id)
 				redisService.stopCancel(job.sourceName)
 			}

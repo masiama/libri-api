@@ -41,7 +41,8 @@ sealed class CrawlerEvent {
 
 	data class CrawlErrorEvent(
 		override val crawlId: Long,
-		val error: String
+		val error: String,
+		val url: String? = null
 	) : CrawlerEvent()
 
 	data class CancelledEvent(

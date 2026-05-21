@@ -33,7 +33,8 @@ class CrawlJobEventService {
 
 	fun publishStarted() = publish("crawl-job-started", null)
 
-	fun publishUpdated(job: CrawlJob) = publish("crawl-job-updated", job.toDTO())
+	fun publishUpdated(job: CrawlJob, errorCount: Long = 0) =
+		publish("crawl-job-updated", job.toDTO(errorCount))
 
 	fun publishProgress(crawlId: Long, booksFound: Int) {
 		publish("crawl-job-progress", mapOf("id" to crawlId, "booksFound" to booksFound))

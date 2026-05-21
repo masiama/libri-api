@@ -37,5 +37,6 @@ class CrawlJob(
 	@Column(name = "last_heartbeat_at")
 	var lastHeartbeatAt: Instant? = null
 ) {
-	fun toDTO() = CrawlJobDTO(id, sourceName, startedAt, finishedAt, status, booksFound, errorMessage)
+	fun toDTO(errorCount: Long?) =
+		CrawlJobDTO(id, sourceName, startedAt, finishedAt, status, booksFound, errorMessage, errorCount ?: 0)
 }
