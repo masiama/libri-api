@@ -10,32 +10,36 @@ data class CrawlerCommand(val crawlId: Long, val source: String)
 
 @Service
 class RedisService(private val redisTemplate: StringRedisTemplate) {
-	private val cacheKeyExistingUrls = "books:existing_urls"
+	private val existingUrlsSet = "books:existing_urls"
+	private val eventsQueue = "crawler:events"
+	private val commandsQueue = "crawler:commands"
+	private fun lockKey(sourceName: String) = "crawler:lock:$sourceName"
+	private fun cancelKey(sourceName: String) = "crawler:cancel:$sourceName"
 
 	fun readCrawlEvent(): String? =
-		redisTemplate.opsForList().rightPop("crawl:events", Duration.ofSeconds(5))
+		redisTemplate.opsForList().rightPop(eventsQueue, Duration.ofSeconds(5))
 
 	fun startCancel(sourceName: String) =
-		redisTemplate.opsForValue().set("crawl:cancel:${sourceName}", "1")
+		redisTemplate.opsForValue().set(cancelKey(sourceName), "1")
 
 	fun stopCancel(sourceName: String): Boolean? =
-		redisTemplate.delete("crawl:cancel:${sourceName}")
+		redisTemplate.delete(cancelKey(sourceName))
 
 	fun resetExistingUrls(urls: List<String>) {
-		redisTemplate.delete(cacheKeyExistingUrls)
+		redisTemplate.delete(existingUrlsSet)
 		addExistingUrls(urls)
 	}
 
 	fun addExistingUrls(urls: List<String>) {
 		if (urls.isEmpty()) return
-		redisTemplate.opsForSet().add(cacheKeyExistingUrls, *urls.toTypedArray())
+		redisTemplate.opsForSet().add(existingUrlsSet, *urls.toTypedArray())
 	}
 
 	fun deleteSourceLock(sourceName: String): Boolean? =
-		redisTemplate.delete("lock:crawler:${sourceName}")
+		redisTemplate.delete(lockKey(sourceName))
 
 	fun pushCrawlJob(job: CrawlJob) {
 		val command = CrawlerCommand(crawlId = job.id, source = job.sourceName)
-		redisTemplate.opsForList().leftPush("crawler:commands", command.toJson())
+		redisTemplate.opsForList().leftPush(commandsQueue, command.toJson())
 	}
 }
