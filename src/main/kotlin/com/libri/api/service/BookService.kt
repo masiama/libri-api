@@ -25,6 +25,7 @@ class BookService(
 	private val purgatoryBatchRepository: PurgatoryBatchRepository,
 	private val storageService: StorageService,
 	private val storageConfig: StorageConfig,
+	private val redisService: RedisService,
 ) {
 
 	fun list(pageable: Pageable, filter: String?): Page<BookDTO> {
@@ -52,7 +53,10 @@ class BookService(
 
 		val (validBooks, invalidBooks) = books.partition { IsbnValidator.isValid(it.isbn) }
 
-		if (validBooks.isNotEmpty()) upsertValidBooks(validBooks)
+		if (validBooks.isNotEmpty()) {
+			upsertValidBooks(validBooks)
+			redisService.addExistingUrls(validBooks.map { it.url })
+		}
 		if (invalidBooks.isNotEmpty()) upsertInvalidBooks(invalidBooks)
 	}
 

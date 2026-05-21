@@ -23,6 +23,11 @@ class RedisService(private val redisTemplate: StringRedisTemplate) {
 
 	fun resetExistingUrls(urls: List<String>) {
 		redisTemplate.delete(cacheKeyExistingUrls)
+		addExistingUrls(urls)
+	}
+
+	fun addExistingUrls(urls: List<String>) {
+		if (urls.isEmpty()) return
 		redisTemplate.opsForSet().add(cacheKeyExistingUrls, *urls.toTypedArray())
 	}
 
