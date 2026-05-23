@@ -103,6 +103,10 @@ class CrawlerEventListener(
 				progressTracker.clear(job.id)
 				redisService.stopCancel(job.sourceName)
 			}
+
+			is CrawlerEvent.HeartbeatEvent -> {
+				crawlJobRepository.updateHeartbeat(event.crawlId)
+			}
 		}
 
 	}

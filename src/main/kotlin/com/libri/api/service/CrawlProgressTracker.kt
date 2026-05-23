@@ -30,7 +30,7 @@ class CrawlProgressTracker(private val crawlJobRepository: CrawlJobRepository) {
 			if (!dirty) return@forEach
 			val count = booksFoundState[crawlId] ?: return@forEach
 			booksFoundDirty[crawlId] = false
-			crawlJobRepository.updateProgressHeartbeat(crawlId, count)
+			crawlJobRepository.updateBooksFound(crawlId, count)
 		}
 	}
 }

@@ -14,7 +14,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 	JsonSubTypes.Type(value = CrawlerEvent.CompletedEvent::class, name = "completed"),
 	JsonSubTypes.Type(value = CrawlerEvent.ErrorEvent::class, name = "error"),
 	JsonSubTypes.Type(value = CrawlerEvent.CrawlErrorEvent::class, name = "crawl_error"),
-	JsonSubTypes.Type(value = CrawlerEvent.CancelledEvent::class, name = "cancelled")
+	JsonSubTypes.Type(value = CrawlerEvent.CancelledEvent::class, name = "cancelled"),
+	JsonSubTypes.Type(value = CrawlerEvent.HeartbeatEvent::class, name = "heartbeat"),
 )
 sealed class CrawlerEvent {
 	abstract val crawlId: Long
@@ -48,5 +49,9 @@ sealed class CrawlerEvent {
 	data class CancelledEvent(
 		override val crawlId: Long,
 		val booksFound: Int
+	) : CrawlerEvent()
+
+	data class HeartbeatEvent(
+		override val crawlId: Long,
 	) : CrawlerEvent()
 }

@@ -15,13 +15,13 @@ interface CrawlJobRepository : JpaRepository<CrawlJob, Long> {
 
 	@Modifying
 	@Transactional
-	@Query(
-		"""
-			UPDATE CrawlJob j SET j.booksFound = :count, j.lastHeartbeatAt = :now 
-			WHERE j.id = :id
-		"""
-	)
-	fun updateProgressHeartbeat(id: Long, count: Int, now: Instant = Instant.now())
+	@Query("UPDATE CrawlJob j SET j.booksFound = :count WHERE j.id = :id")
+	fun updateBooksFound(id: Long, count: Int)
+
+	@Modifying
+	@Transactional
+	@Query("UPDATE CrawlJob j SET j.lastHeartbeatAt = :now WHERE j.id = :id")
+	fun updateHeartbeat(id: Long, now: Instant = Instant.now())
 
 	@Query(
 		"""
