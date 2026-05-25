@@ -1,5 +1,6 @@
 package com.libri.api.repository
 
+import com.libri.api.dto.BookDTO
 import com.libri.api.entity.Book
 import jakarta.annotation.PostConstruct
 import org.springframework.jdbc.core.JdbcTemplate
@@ -30,29 +31,25 @@ class BookBatchRepository(
 		sourcePriorities = sourceRepository.findAll().associate { it.name to it.priority }
 	}
 
-	fun upsertBooks(rows: List<Book>) {
-		if (rows.isEmpty()) return
-
-		val deduped = rows
-			.groupBy { it.isbn }
+	fun deduplicateByPriority(books: List<BookDTO>): List<BookDTO> =
+		books.groupBy { it.isbn }
 			.values
 			.map { duplicates ->
-				duplicates.minByOrNull { sourcePriorities[it.sourceName] ?: Short.MIN_VALUE }!!
+				duplicates.minByOrNull { sourcePriorities[it.sourceName] ?: Short.MAX_VALUE }!!
 			}
 
+	fun upsertBooks(rows: List<Book>) {
+		if (rows.isEmpty()) return
 		jdbcTemplate.update { conn ->
 			conn.prepareStatement(UPSERT_BOOKS_SQL).apply {
-				setArray(1, conn.createArrayOf("text", deduped.map { it.isbn }.toTypedArray()))
-				setArray(2, conn.createArrayOf("text", deduped.map { it.title }.toTypedArray()))
+				setArray(1, conn.createArrayOf("text", rows.map { it.isbn }.toTypedArray()))
+				setArray(2, conn.createArrayOf("text", rows.map { it.title }.toTypedArray()))
 				setArray(
 					3,
-					conn.createArrayOf(
-						"text",
-						deduped.map { objectMapper.writeValueAsString(it.authors) }.toTypedArray()
-					)
+					conn.createArrayOf("text", rows.map { objectMapper.writeValueAsString(it.authors) }.toTypedArray())
 				)
-				setArray(4, conn.createArrayOf("text", deduped.map { it.url }.toTypedArray()))
-				setArray(5, conn.createArrayOf("text", deduped.map { it.sourceName }.toTypedArray()))
+				setArray(4, conn.createArrayOf("text", rows.map { it.url }.toTypedArray()))
+				setArray(5, conn.createArrayOf("text", rows.map { it.sourceName }.toTypedArray()))
 			}
 		}
 	}
@@ -98,27 +95,27 @@ class BookBatchRepository(
 
 	private companion object {
 		private const val UPSERT_BOOKS_SQL = """
-            INSERT INTO books (isbn, title, authors, url, source_name)
-            SELECT 
-                unnest(?::text[]),
-                unnest(?::text[]),
-                unnest(?::text[])::jsonb,
-                unnest(?::text[]),
-                unnest(?::text[])
-            ON CONFLICT (isbn) DO UPDATE SET
-                title = EXCLUDED.title,
-                authors = EXCLUDED.authors,
-                url = EXCLUDED.url,
-                source_name = EXCLUDED.source_name
-            WHERE (SELECT priority FROM sources WHERE name = EXCLUDED.source_name)
-                <= (SELECT priority FROM sources WHERE name = books.source_name)
-        """
+			INSERT INTO books (isbn, title, authors, url, source_name)
+			SELECT
+				unnest(?::text[]),
+				unnest(?::text[]),
+				unnest(?::text[])::jsonb,
+				unnest(?::text[]),
+				unnest(?::text[])
+			ON CONFLICT (isbn) DO UPDATE SET
+				title = EXCLUDED.title,
+				authors = EXCLUDED.authors,
+				url = EXCLUDED.url,
+				source_name = EXCLUDED.source_name
+			WHERE (SELECT priority FROM sources WHERE name = EXCLUDED.source_name)
+				<= (SELECT priority FROM sources WHERE name = books.source_name)
+		"""
 
 		private const val DELETE_BARCODES_SQL = """
 			DELETE FROM barcodes
-            WHERE (isbn, source_name) = ANY(
-                SELECT unnest(?::text[]), unnest(?::text[])
-            )
+			WHERE (isbn, source_name) = ANY(
+				SELECT unnest(?::text[]), unnest(?::text[])
+			)
 		"""
 
 		private const val DELETE_AND_INSERT_BARCODES_SQL = """

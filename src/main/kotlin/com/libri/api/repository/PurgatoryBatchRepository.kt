@@ -19,13 +19,17 @@ class PurgatoryBatchRepository(
 ) {
 	fun upsertBooks(rows: List<PurgatoryBook>) {
 		if (rows.isEmpty()) return
-
-		jdbcTemplate.batchUpdate(UPSERT_PURGATORY_SQL, rows, rows.size) { ps, row ->
-			ps.setString(1, row.invalidIsbn)
-			ps.setString(2, row.title)
-			ps.setString(3, objectMapper.writeValueAsString(row.authors))
-			ps.setString(4, row.url)
-			ps.setString(5, row.sourceName)
+		jdbcTemplate.update { conn ->
+			conn.prepareStatement(UPSERT_PURGATORY_SQL).apply {
+				setArray(1, conn.createArrayOf("text", rows.map { it.invalidIsbn }.toTypedArray()))
+				setArray(2, conn.createArrayOf("text", rows.map { it.title }.toTypedArray()))
+				setArray(
+					3,
+					conn.createArrayOf("text", rows.map { objectMapper.writeValueAsString(it.authors) }.toTypedArray())
+				)
+				setArray(4, conn.createArrayOf("text", rows.map { it.url }.toTypedArray()))
+				setArray(5, conn.createArrayOf("text", rows.map { it.sourceName }.toTypedArray()))
+			}
 		}
 	}
 
@@ -37,23 +41,31 @@ class PurgatoryBatchRepository(
 		if (rows.isEmpty()) return
 
 		val targets = rows.distinctBy { it.purgatoryId to it.sourceName }
-		jdbcTemplate.batchUpdate(DELETE_PURGATORY_BARCODES_SQL, targets, targets.size) { ps, row ->
-			ps.setLong(1, row.purgatoryId)
-			ps.setString(2, row.sourceName)
-		}
-
 		val barcodeRows = rows.flatMap { row ->
 			row.barcodes.map { barcode ->
 				PurgatoryBarcodeInsertRow(barcode.value, barcode.type, row.purgatoryId, row.sourceName)
 			}
 		}
-		if (barcodeRows.isEmpty()) return
 
-		jdbcTemplate.batchUpdate(INSERT_PURGATORY_BARCODES_SQL, barcodeRows, barcodeRows.size) { ps, row ->
-			ps.setString(1, row.value)
-			ps.setString(2, row.type)
-			ps.setLong(3, row.purgatoryId)
-			ps.setString(4, row.sourceName)
+		if (barcodeRows.isEmpty()) {
+			jdbcTemplate.update { conn ->
+				conn.prepareStatement(DELETE_PURGATORY_BARCODES_SQL).apply {
+					setArray(1, conn.createArrayOf("int8", targets.map { it.purgatoryId }.toTypedArray()))
+					setArray(2, conn.createArrayOf("text", targets.map { it.sourceName }.toTypedArray()))
+				}
+			}
+			return
+		}
+
+		jdbcTemplate.update { conn ->
+			conn.prepareStatement(DELETE_AND_INSERT_PURGATORY_BARCODES_SQL).apply {
+				setArray(1, conn.createArrayOf("int8", targets.map { it.purgatoryId }.toTypedArray()))
+				setArray(2, conn.createArrayOf("text", targets.map { it.sourceName }.toTypedArray()))
+				setArray(3, conn.createArrayOf("text", barcodeRows.map { it.value }.toTypedArray()))
+				setArray(4, conn.createArrayOf("text", barcodeRows.map { it.type }.toTypedArray()))
+				setArray(5, conn.createArrayOf("int8", barcodeRows.map { it.purgatoryId }.toTypedArray()))
+				setArray(6, conn.createArrayOf("text", barcodeRows.map { it.sourceName }.toTypedArray()))
+			}
 		}
 	}
 
@@ -67,7 +79,12 @@ class PurgatoryBatchRepository(
 	private companion object {
 		private const val UPSERT_PURGATORY_SQL = """
 			INSERT INTO purgatory (invalid_isbn, title, authors, url, source_name)
-			VALUES (?, ?, ?::jsonb, ?, ?)
+			SELECT
+				unnest(?::text[]),
+				unnest(?::text[]),
+				unnest(?::text[])::jsonb,
+				unnest(?::text[]),
+				unnest(?::text[])
 			ON CONFLICT (invalid_isbn, source_name) DO UPDATE SET
 				title = EXCLUDED.title,
 				authors = EXCLUDED.authors,
@@ -78,12 +95,20 @@ class PurgatoryBatchRepository(
 
 		private const val DELETE_PURGATORY_BARCODES_SQL = """
 			DELETE FROM purgatory_barcodes
-			WHERE purgatory_id = ? AND source_name = ?
+			WHERE (purgatory_id, source_name) = ANY(
+				SELECT unnest(?::bigint[]), unnest(?::text[])
+			)
 		"""
 
-		private const val INSERT_PURGATORY_BARCODES_SQL = """
+		private const val DELETE_AND_INSERT_PURGATORY_BARCODES_SQL = """
+			WITH deleted AS (
+				DELETE FROM purgatory_barcodes
+				WHERE (purgatory_id, source_name) = ANY(
+					SELECT unnest(?::bigint[]), unnest(?::text[])
+				)
+			)
 			INSERT INTO purgatory_barcodes (value, type, purgatory_id, source_name)
-			VALUES (?, ?, ?, ?)
+			SELECT * FROM unnest(?::text[], ?::text[], ?::bigint[], ?::text[])
 			ON CONFLICT DO NOTHING
 		"""
 	}

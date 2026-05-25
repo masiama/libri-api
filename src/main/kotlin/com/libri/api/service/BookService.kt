@@ -153,8 +153,9 @@ class BookService(
 	}
 
 	private fun upsertValidBooks(books: List<BookDTO>) {
-		bookBatchRepository.upsertBooks(books.map { it.toEntity() })
-		bookBatchRepository.replaceBarcodes(books.map { it.toBookBarcodeReplacement() })
+		val deduped = bookBatchRepository.deduplicateByPriority(books)
+		bookBatchRepository.upsertBooks(deduped.map { it.toEntity() })
+		bookBatchRepository.replaceBarcodes(deduped.map { it.toBookBarcodeReplacement() })
 	}
 
 	private fun upsertInvalidBooks(books: List<BookDTO>) {
@@ -164,15 +165,12 @@ class BookService(
 		val resolvedBooks = books.mapNotNull { book ->
 			val purgatory = purgatoryByKey[book.isbn to book.sourceName] ?: return@mapNotNull null
 			val resolvedIsbn = purgatory.resolvedIsbn ?: return@mapNotNull null
-			book to resolvedIsbn
+			book.copy(isbn = resolvedIsbn)
 		}
 
-		bookBatchRepository.upsertBooks(
-			resolvedBooks.map { (book, resolvedIsbn) -> book.toEntity(resolvedIsbn) }
-		)
-		bookBatchRepository.replaceBarcodes(
-			resolvedBooks.map { (book, resolvedIsbn) -> book.toBookBarcodeReplacement(resolvedIsbn) }
-		)
+		val dedupedResolved = bookBatchRepository.deduplicateByPriority(resolvedBooks)
+		bookBatchRepository.upsertBooks(dedupedResolved.map { it.toEntity() })
+		bookBatchRepository.replaceBarcodes(dedupedResolved.map { it.toBookBarcodeReplacement() })
 
 		val purgatoryBarcodeReplacements = books.mapNotNull { book ->
 			val p = purgatoryByKey[book.isbn to book.sourceName] ?: return@mapNotNull null
