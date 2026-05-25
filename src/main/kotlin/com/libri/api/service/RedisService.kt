@@ -32,7 +32,9 @@ class RedisService(private val redisTemplate: StringRedisTemplate) {
 
 	fun addExistingUrls(urls: List<String>) {
 		if (urls.isEmpty()) return
-		redisTemplate.opsForSet().add(existingUrlsSet, *urls.toTypedArray())
+		urls.chunked(1000).forEach { chunk ->
+			redisTemplate.opsForSet().add(existingUrlsSet, *chunk.toTypedArray())
+		}
 	}
 
 	fun deleteSourceLock(sourceName: String): Boolean? =
