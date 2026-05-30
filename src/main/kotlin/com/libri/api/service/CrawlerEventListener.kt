@@ -9,6 +9,7 @@ import com.libri.api.repository.CrawlJobErrorRepository
 import com.libri.api.repository.CrawlJobRepository
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.time.Instant
 import kotlin.concurrent.thread
@@ -25,6 +26,7 @@ class CrawlerEventListener(
 	private var running = true
 	private val batchSizeThreshold = 300
 	private val bookBuffer = mutableListOf<BookDTO>()
+	private val logger = LoggerFactory.getLogger(CrawlerEventListener::class.java)
 
 	@PostConstruct
 	fun startListening() {
@@ -34,7 +36,8 @@ class CrawlerEventListener(
 					val result = redisService.readCrawlEvent() ?: continue
 					val event = result.fromJson<CrawlerEvent>()
 					processUnifiedEvent(event)
-				} catch (_: Exception) {
+				} catch (e: Exception) {
+					logger.error("Error while reading event", e)
 					Thread.sleep(2000)
 				}
 			}
@@ -108,7 +111,6 @@ class CrawlerEventListener(
 				crawlJobRepository.updateHeartbeat(event.crawlId)
 			}
 		}
-
 	}
 
 	private fun flushBooks() {
