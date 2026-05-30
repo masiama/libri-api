@@ -79,12 +79,9 @@ class PurgatoryBatchRepository(
 	private companion object {
 		private const val UPSERT_PURGATORY_SQL = """
 			INSERT INTO purgatory (invalid_isbn, title, authors, url, source_name)
-			SELECT
-				unnest(?::text[]),
-				unnest(?::text[]),
-				unnest(?::text[])::jsonb,
-				unnest(?::text[]),
-				unnest(?::text[])
+			SELECT t.invalid_isbn, t.title, t.authors::jsonb, t.url, t.source_name
+			FROM unnest(?::text[], ?::text[], ?::text[], ?::text[], ?::text[])
+				AS t(invalid_isbn, title, authors, url, source_name)
 			ON CONFLICT (invalid_isbn, source_name) DO UPDATE SET
 				title = EXCLUDED.title,
 				authors = EXCLUDED.authors,
@@ -94,22 +91,24 @@ class PurgatoryBatchRepository(
 		"""
 
 		private const val DELETE_PURGATORY_BARCODES_SQL = """
-			DELETE FROM purgatory_barcodes
-			WHERE (purgatory_id, source_name) = ANY(
-				SELECT unnest(?::bigint[]), unnest(?::text[])
-			)
+			DELETE FROM purgatory_barcodes pb
+			USING unnest(?::bigint[], ?::text[]) AS d(purgatory_id, source_name)
+			WHERE pb.purgatory_id = d.purgatory_id AND pb.source_name = d.source_name
 		"""
 
 		private const val DELETE_AND_INSERT_PURGATORY_BARCODES_SQL = """
 			WITH deleted AS (
-				DELETE FROM purgatory_barcodes
-				WHERE (purgatory_id, source_name) = ANY(
-					SELECT unnest(?::bigint[]), unnest(?::text[])
-				)
+				DELETE FROM purgatory_barcodes pb
+				USING unnest(?::bigint[], ?::text[]) AS d(purgatory_id, source_name)
+				WHERE pb.purgatory_id = d.purgatory_id AND pb.source_name = d.source_name
+				RETURNING pb.purgatory_id, pb.source_name
 			)
 			INSERT INTO purgatory_barcodes (value, type, purgatory_id, source_name)
-			SELECT * FROM unnest(?::text[], ?::text[], ?::bigint[], ?::text[])
-			ON CONFLICT DO NOTHING
+			SELECT t.value, t.type, t.purgatory_id, t.source_name
+			FROM unnest(?::text[], ?::text[], ?::bigint[], ?::text[])
+				AS t(value, type, purgatory_id, source_name)
+			LEFT JOIN deleted d ON t.purgatory_id = d.purgatory_id AND t.source_name = d.source_name
+			ON CONFLICT (purgatory_id, source_name, value, type) DO NOTHING
 		"""
 	}
 }

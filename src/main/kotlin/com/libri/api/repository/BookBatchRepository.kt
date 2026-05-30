@@ -96,12 +96,9 @@ class BookBatchRepository(
 	private companion object {
 		private const val UPSERT_BOOKS_SQL = """
 			INSERT INTO books (isbn, title, authors, url, source_name)
-			SELECT
-				unnest(?::text[]),
-				unnest(?::text[]),
-				unnest(?::text[])::jsonb,
-				unnest(?::text[]),
-				unnest(?::text[])
+			SELECT t.isbn, t.title, t.authors::jsonb, t.url, t.source_name
+			FROM unnest(?::text[], ?::text[], ?::text[], ?::text[], ?::text[])
+				AS t(isbn, title, authors, url, source_name)
 			ON CONFLICT (isbn) DO UPDATE SET
 				title = EXCLUDED.title,
 				authors = EXCLUDED.authors,
@@ -112,22 +109,24 @@ class BookBatchRepository(
 		"""
 
 		private const val DELETE_BARCODES_SQL = """
-			DELETE FROM barcodes
-			WHERE (isbn, source_name) = ANY(
-				SELECT unnest(?::text[]), unnest(?::text[])
-			)
+			DELETE FROM barcodes b
+			USING unnest(?::text[], ?::text[]) AS d(isbn, source_name)
+			WHERE b.isbn = d.isbn AND b.source_name = d.source_name
 		"""
 
 		private const val DELETE_AND_INSERT_BARCODES_SQL = """
 			WITH deleted AS (
-				DELETE FROM barcodes
-				WHERE (isbn, source_name) = ANY(
-					SELECT unnest(?::text[]), unnest(?::text[])
-				)
+				DELETE FROM barcodes b
+				USING unnest(?::text[], ?::text[]) AS d(isbn, source_name)
+				WHERE b.isbn = d.isbn AND b.source_name = d.source_name
+				RETURNING b.isbn, b.source_name
 			)
 			INSERT INTO barcodes (value, type, isbn, source_name)
-			SELECT * FROM unnest(?::text[], ?::text[], ?::text[], ?::text[])
-			ON CONFLICT DO NOTHING
+			SELECT t.value, t.type, t.isbn, t.source_name
+			FROM unnest(?::text[], ?::text[], ?::text[], ?::text[])
+				AS t(value, type, isbn, source_name)
+			LEFT JOIN deleted d ON t.isbn = d.isbn AND t.source_name = d.source_name
+			ON CONFLICT (isbn, source_name, value, type) DO NOTHING
 		"""
 	}
 }
