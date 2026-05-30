@@ -10,104 +10,122 @@ import java.io.File
 
 @Service
 class StorageService(
-	private val storageConfig: StorageConfig
+    private val storageConfig: StorageConfig,
 ) {
+    fun store(
+        isbn: String,
+        file: MultipartFile,
+    ) {
+        storeInternal(storageConfig.resolveImagePath(isbn), file)
+    }
 
-	fun store(isbn: String, file: MultipartFile) {
-		storeInternal(storageConfig.resolveImagePath(isbn), file)
-	}
+    fun storeTransactional(
+        isbn: String,
+        file: MultipartFile,
+    ) {
+        val destination = storageConfig.resolveImagePath(isbn)
+        val previousContents = destination.takeIf(File::exists)?.readBytes()
 
-	fun storeTransactional(isbn: String, file: MultipartFile) {
-		val destination = storageConfig.resolveImagePath(isbn)
-		val previousContents = destination.takeIf(File::exists)?.readBytes()
+        storeInternal(destination, file)
+        registerRollback(destination, previousContents)
+    }
 
-		storeInternal(destination, file)
-		registerRollback(destination, previousContents)
-	}
+    fun load(isbn: String): File {
+        val file = storageConfig.resolveImagePath(isbn)
+        if (!file.exists()) throw ImageNotFoundException(isbn)
+        return file
+    }
 
-	fun load(isbn: String): File {
-		val file = storageConfig.resolveImagePath(isbn)
-		if (!file.exists()) throw ImageNotFoundException(isbn)
-		return file
-	}
+    fun deleteTransactional(isbn: String) {
+        val destination = storageConfig.resolveImagePath(isbn)
+        val previousContents = destination.takeIf(File::exists)?.readBytes()
 
-	fun deleteTransactional(isbn: String) {
-		val destination = storageConfig.resolveImagePath(isbn)
-		val previousContents = destination.takeIf(File::exists)?.readBytes()
+        destination.delete()
 
-		destination.delete()
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            return
+        }
 
-		if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-			return
-		}
+        TransactionSynchronizationManager.registerSynchronization(
+            object : TransactionSynchronization {
+                override fun afterCompletion(status: Int) {
+                    if (status != TransactionSynchronization.STATUS_ROLLED_BACK || previousContents == null) {
+                        return
+                    }
 
-		TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
-			override fun afterCompletion(status: Int) {
-				if (status != TransactionSynchronization.STATUS_ROLLED_BACK || previousContents == null) {
-					return
-				}
+                    destination.parentFile?.mkdirs()
+                    destination.writeBytes(previousContents)
+                }
+            },
+        )
+    }
 
-				destination.parentFile?.mkdirs()
-				destination.writeBytes(previousContents)
-			}
-		})
-	}
+    fun copyImageTransactional(
+        fromIsbn: String,
+        toIsbn: String,
+    ) {
+        val source = storageConfig.resolveImagePath(fromIsbn)
+        val destination = storageConfig.resolveImagePath(toIsbn)
+        val previousContents = destination.takeIf(File::exists)?.readBytes()
 
-	fun copyImageTransactional(fromIsbn: String, toIsbn: String) {
-		val source = storageConfig.resolveImagePath(fromIsbn)
-		val destination = storageConfig.resolveImagePath(toIsbn)
-		val previousContents = destination.takeIf(File::exists)?.readBytes()
+        destination.parentFile?.mkdirs()
+        source.copyTo(destination, overwrite = true)
 
-		destination.parentFile?.mkdirs()
-		source.copyTo(destination, overwrite = true)
+        registerRollback(destination, previousContents)
+    }
 
-		registerRollback(destination, previousContents)
-	}
+    private fun storeInternal(
+        destination: File,
+        file: MultipartFile,
+    ) {
+        validateFile(file)
 
-	private fun storeInternal(destination: File, file: MultipartFile) {
-		validateFile(file)
+        // Ensure directories exist
+        destination.parentFile.mkdirs()
 
-		// Ensure directories exist
-		destination.parentFile.mkdirs()
+        file.inputStream.use { input ->
+            destination.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+    }
 
-		file.inputStream.use { input ->
-			destination.outputStream().use { output ->
-				input.copyTo(output)
-			}
-		}
-	}
+    private fun validateFile(file: MultipartFile) {
+        if (file.isEmpty) {
+            throw IllegalArgumentException("Empty file")
+        }
 
-	private fun validateFile(file: MultipartFile) {
-		if (file.isEmpty) {
-			throw IllegalArgumentException("Empty file")
-		}
+        val contentType = file.contentType ?: throw IllegalArgumentException("Missing content type")
+        if (contentType !in allowedTypes) {
+            throw IllegalArgumentException("Unsupported file type: $contentType")
+        }
+    }
 
-		val contentType = file.contentType ?: throw IllegalArgumentException("Missing content type")
-		if (contentType !in allowedTypes) {
-			throw IllegalArgumentException("Unsupported file type: $contentType")
-		}
-	}
+    private fun registerRollback(
+        destination: File,
+        previousContents: ByteArray?,
+    ) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            return
+        }
 
-	private fun registerRollback(destination: File, previousContents: ByteArray?) {
-		if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-			return
-		}
+        TransactionSynchronizationManager.registerSynchronization(
+            object : TransactionSynchronization {
+                override fun afterCompletion(status: Int) {
+                    if (status != TransactionSynchronization.STATUS_ROLLED_BACK) return
 
-		TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
-			override fun afterCompletion(status: Int) {
-				if (status != TransactionSynchronization.STATUS_ROLLED_BACK) return
+                    destination.parentFile?.mkdirs()
+                    if (previousContents == null) {
+                        destination.delete()
+                        return
+                    }
+                    destination.writeBytes(previousContents)
+                }
+            },
+        )
+    }
 
-				destination.parentFile?.mkdirs()
-				if (previousContents == null) {
-					destination.delete()
-					return
-				}
-				destination.writeBytes(previousContents)
-			}
-		})
-	}
-
-	companion object {
-		private val allowedTypes = setOf("image/jpeg", "image/png", "image/gif", "image/webp")
-	}
+    companion object {
+        private val allowedTypes = setOf("image/jpeg", "image/png", "image/gif", "image/webp")
+    }
 }

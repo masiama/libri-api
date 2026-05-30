@@ -17,45 +17,46 @@ import org.springframework.security.web.SecurityFilterChain
 @Configuration
 @EnableWebSecurity
 class SecurityConfig(
-	@Value($$"${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
-	private val jwkSetUri: String,
+    @Value($$"${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
+    private val jwkSetUri: String,
 ) {
+    @Bean
+    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
+        http
+            .csrf { it.disable() }
+            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+            .authorizeHttpRequests { auth ->
+                auth
+                    .requestMatchers("/api/v1/ping")
+                    .permitAll()
+                    .requestMatchers("/api/v1/images/**")
+                    .permitAll()
+                    .requestMatchers("/api/v1/admin/**")
+                    .hasRole("ADMIN")
+                    .anyRequest()
+                    .authenticated()
+            }.oauth2ResourceServer { oauth2 ->
+                oauth2.jwt { it.jwtAuthenticationConverter(jwtAuthenticationConverter()) }
+            }
 
-	@Bean
-	fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
-		http
-			.csrf { it.disable() }
-			.sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
-			.authorizeHttpRequests { auth ->
-				auth
-					.requestMatchers("/api/v1/ping").permitAll()
-					.requestMatchers("/api/v1/images/**").permitAll()
-					.requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-					.anyRequest().authenticated()
-			}
-			.oauth2ResourceServer { oauth2 ->
-				oauth2.jwt { it.jwtAuthenticationConverter(jwtAuthenticationConverter()) }
-			}
+        return http.build()
+    }
 
-		return http.build()
-	}
+    @Bean
+    fun jwtAuthenticationConverter(): JwtAuthenticationConverter {
+        val converter = JwtAuthenticationConverter()
+        converter.setJwtGrantedAuthoritiesConverter { jwt: Jwt ->
+            val authorities = mutableListOf<SimpleGrantedAuthority>()
 
-	@Bean
-	fun jwtAuthenticationConverter(): JwtAuthenticationConverter {
-		val converter = JwtAuthenticationConverter()
-		converter.setJwtGrantedAuthoritiesConverter { jwt: Jwt ->
-			val authorities = mutableListOf<SimpleGrantedAuthority>()
+            if (jwt.getClaim<Boolean>("is_admin") == true) {
+                authorities.add(SimpleGrantedAuthority("ROLE_ADMIN"))
+            }
 
-			if (jwt.getClaim<Boolean>("is_admin") == true) {
-				authorities.add(SimpleGrantedAuthority("ROLE_ADMIN"))
-			}
+            authorities
+        }
+        return converter
+    }
 
-			authorities
-		}
-		return converter
-	}
-
-	@Bean
-	fun jwtDecoder(): JwtDecoder =
-		NimbusJwtDecoder.withJwkSetUri(jwkSetUri).jwsAlgorithm(SignatureAlgorithm.RS256).build()
+    @Bean
+    fun jwtDecoder(): JwtDecoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).jwsAlgorithm(SignatureAlgorithm.RS256).build()
 }

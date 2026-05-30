@@ -11,20 +11,29 @@ import java.time.Instant
 
 @Repository
 interface CrawlJobRepository : JpaRepository<CrawlJob, Long> {
-	fun existsByStatusAndSourceName(status: CrawlStatus, sourceName: String): Boolean
+    fun existsByStatusAndSourceName(
+        status: CrawlStatus,
+        sourceName: String,
+    ): Boolean
 
-	@Modifying
-	@Transactional
-	@Query("UPDATE CrawlJob j SET j.booksFound = :count WHERE j.id = :id")
-	fun updateBooksFound(id: Long, count: Int)
+    @Modifying
+    @Transactional
+    @Query("UPDATE CrawlJob j SET j.booksFound = :count WHERE j.id = :id")
+    fun updateBooksFound(
+        id: Long,
+        count: Int,
+    )
 
-	@Modifying
-	@Transactional
-	@Query("UPDATE CrawlJob j SET j.lastHeartbeatAt = :now WHERE j.id = :id")
-	fun updateHeartbeat(id: Long, now: Instant = Instant.now())
+    @Modifying
+    @Transactional
+    @Query("UPDATE CrawlJob j SET j.lastHeartbeatAt = :now WHERE j.id = :id")
+    fun updateHeartbeat(
+        id: Long,
+        now: Instant = Instant.now(),
+    )
 
-	@Query(
-		"""
+    @Query(
+        """
 			SELECT j FROM CrawlJob j
 			WHERE j.status = :status
 			AND (
@@ -32,11 +41,11 @@ interface CrawlJobRepository : JpaRepository<CrawlJob, Long> {
 				OR
 				(j.lastHeartbeatAt IS NULL AND j.startedAt < :startedThreshold)
 			)
-		"""
-	)
-	fun findStaleJobs(
-		threshold: Instant,
-		startedThreshold: Instant,
-		status: CrawlStatus = CrawlStatus.RUNNING
-	): List<CrawlJob>
+		""",
+    )
+    fun findStaleJobs(
+        threshold: Instant,
+        startedThreshold: Instant,
+        status: CrawlStatus = CrawlStatus.RUNNING,
+    ): List<CrawlJob>
 }

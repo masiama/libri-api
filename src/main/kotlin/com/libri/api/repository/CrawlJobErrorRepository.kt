@@ -9,20 +9,24 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface CrawlJobErrorRepository : JpaRepository<CrawlJobError, Long> {
-	fun findAllByCrawlJobId(crawlJobId: Long, pageable: Pageable): Page<CrawlJobError>
-	fun countByCrawlJobId(crawlJobId: Long): Long
+    fun findAllByCrawlJobId(
+        crawlJobId: Long,
+        pageable: Pageable,
+    ): Page<CrawlJobError>
 
-	interface CrawlJobErrorCount {
-		val crawlJobId: Long
-		val count: Long
-	}
+    fun countByCrawlJobId(crawlJobId: Long): Long
 
-	@Query(
-		"""
+    interface CrawlJobErrorCount {
+        val crawlJobId: Long
+        val count: Long
+    }
+
+    @Query(
+        """
 			SELECT e.crawlJobId AS crawlJobId, COUNT(e) AS count FROM CrawlJobError e 
 			WHERE e.crawlJobId IN :ids 
 			GROUP BY e.crawlJobId
-		"""
-	)
-	fun countsByCrawlJobIds(ids: List<Long>): List<CrawlJobErrorCount>
+		""",
+    )
+    fun countsByCrawlJobIds(ids: List<Long>): List<CrawlJobErrorCount>
 }

@@ -13,17 +13,23 @@ import java.nio.file.Files
 
 @RestController
 @RequestMapping("/api/v1/images")
-class ImageController(private val storageService: StorageService) {
-	@GetMapping("/{isbn}.jpg")
-	fun getImage(@PathVariable isbn: String): ResponseEntity<Resource> {
-		val file = storageService.load(isbn)
-		val resource = UrlResource(file.toURI())
+class ImageController(
+    private val storageService: StorageService,
+) {
+    @GetMapping("/{isbn}.jpg")
+    fun getImage(
+        @PathVariable isbn: String,
+    ): ResponseEntity<Resource> {
+        val file = storageService.load(isbn)
+        val resource = UrlResource(file.toURI())
 
-		val contentType = Files.probeContentType(file.toPath())
-			?: "application/octet-stream"
+        val contentType =
+            Files.probeContentType(file.toPath())
+                ?: "application/octet-stream"
 
-		return ResponseEntity.ok()
-			.contentType(MediaType.parseMediaType(contentType))
-			.body(resource)
-	}
+        return ResponseEntity
+            .ok()
+            .contentType(MediaType.parseMediaType(contentType))
+            .body(resource)
+    }
 }

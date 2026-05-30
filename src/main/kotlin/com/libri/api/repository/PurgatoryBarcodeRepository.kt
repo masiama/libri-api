@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface PurgatoryBarcodeRepository : JpaRepository<PurgatoryBarcode, BarcodeId> {
-	fun findAllByPurgatoryId(id: Long): List<PurgatoryBarcode>
-	fun deleteAllByPurgatoryId(id: Long)
+    fun findAllByPurgatoryId(id: Long): List<PurgatoryBarcode>
+
+    fun deleteAllByPurgatoryId(id: Long)
 }

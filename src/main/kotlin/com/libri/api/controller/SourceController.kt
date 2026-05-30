@@ -8,7 +8,9 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/v1/sources")
-class SourceController(private val sourceService: SourceService) {
-	@GetMapping
-	fun list(): List<SourceDTO> = sourceService.list()
+class SourceController(
+    private val sourceService: SourceService,
+) {
+    @GetMapping
+    fun list(): List<SourceDTO> = sourceService.list()
 }

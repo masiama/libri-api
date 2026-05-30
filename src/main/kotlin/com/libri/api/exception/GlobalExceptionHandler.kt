@@ -6,9 +6,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
-
-	@ExceptionHandler(ImageNotFoundException::class)
-	fun handleImageNotFound(): ResponseEntity<Void> {
-		return ResponseEntity.notFound().build()
-	}
+    @ExceptionHandler(ImageNotFoundException::class)
+    fun handleImageNotFound(): ResponseEntity<Void> = ResponseEntity.notFound().build()
 }

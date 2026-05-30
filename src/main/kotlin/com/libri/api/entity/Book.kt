@@ -3,26 +3,26 @@ package com.libri.api.entity
 import com.libri.api.converter.StringListConverter
 import com.libri.api.dto.BarcodeDTO
 import com.libri.api.dto.BookDTO
-import jakarta.persistence.*
+import jakarta.persistence.Column
+import jakarta.persistence.Convert
+import jakarta.persistence.Entity
+import jakarta.persistence.Id
+import jakarta.persistence.Table
 
 @Entity
 @Table(name = "books")
 class Book(
-	@Id
-	val isbn: String,
-
-	@Column(nullable = false)
-	val title: String,
-
-	@Column(columnDefinition = "jsonb", nullable = false)
-	@Convert(converter = StringListConverter::class)
-	val authors: List<String> = emptyList(),
-
-	@Column(nullable = false)
-	val url: String,
-
-	@Column(name = "source_name", nullable = false)
-	val sourceName: String,
+    @Id
+    val isbn: String,
+    @Column(nullable = false)
+    val title: String,
+    @Column(columnDefinition = "jsonb", nullable = false)
+    @Convert(converter = StringListConverter::class)
+    val authors: List<String> = emptyList(),
+    @Column(nullable = false)
+    val url: String,
+    @Column(name = "source_name", nullable = false)
+    val sourceName: String,
 ) {
-	fun toDTO(barcodes: List<BarcodeDTO>) = BookDTO(isbn, title, authors, url, sourceName, barcodes)
+    fun toDTO(barcodes: List<BarcodeDTO>) = BookDTO(isbn, title, authors, url, sourceName, barcodes)
 }

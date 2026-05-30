@@ -11,11 +11,11 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface BookRepository : JpaRepository<Book, String> {
-	@Query("select b.url from Book b")
-	fun findAllUrls(): List<String>
+    @Query("select b.url from Book b")
+    fun findAllUrls(): List<String>
 
-	@NativeQuery(
-		"""
+    @NativeQuery(
+        """
 			SELECT * FROM (
 				SELECT *, source_name AS "sourcename" FROM books
 				WHERE
@@ -31,7 +31,7 @@ interface BookRepository : JpaRepository<Book, String> {
 				 similarity(title, :title) DESC
 			) as results
 		""",
-		countQuery = """
+        countQuery = """
 			SELECT count(1) FROM books
 			WHERE
 			 title ILIKE (:title || '%')
@@ -41,7 +41,10 @@ interface BookRepository : JpaRepository<Book, String> {
 			 	SELECT 1 FROM jsonb_array_elements_text(authors) AS author
 			 	WHERE author ILIKE ('%' || :title || '%')
 			 )
-		"""
-	)
-	fun searchByTitle(@Param("title") title: String, pageable: Pageable): Page<Book>
+		""",
+    )
+    fun searchByTitle(
+        @Param("title") title: String,
+        pageable: Pageable,
+    ): Page<Book>
 }

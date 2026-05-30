@@ -11,53 +11,66 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.web.PageableDefault
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 
 @RestController
 @RequestMapping("/api/v1/admin/crawl")
 class CrawlerController(
-	private val crawlerService: CrawlerService,
-	private val crawlJobEventService: CrawlJobEventService,
-	private val sourceService: SourceService,
+    private val crawlerService: CrawlerService,
+    private val crawlJobEventService: CrawlJobEventService,
+    private val sourceService: SourceService,
 ) {
-	@PostMapping
-	fun triggerAll(): ResponseEntity<String> {
-		val availableSources = sourceService.listEnabledNotRunning()
+    @PostMapping
+    fun triggerAll(): ResponseEntity<String> {
+        val availableSources = sourceService.listEnabledNotRunning()
 
-		if (availableSources.isEmpty()) {
-			return ResponseEntity.status(409).body("All enabled sources are already running")
-		}
+        if (availableSources.isEmpty()) {
+            return ResponseEntity.status(409).body("All enabled sources are already running")
+        }
 
-		availableSources.forEach { crawlerService.run(it.name) }
-		return ResponseEntity.accepted().body("Crawl started for ${availableSources.size} enabled sources")
-	}
+        availableSources.forEach { crawlerService.run(it.name) }
+        return ResponseEntity.accepted().body("Crawl started for ${availableSources.size} enabled sources")
+    }
 
-	@PostMapping("/{source}")
-	fun triggerSource(@PathVariable source: String): ResponseEntity<String> {
-		if (!sourceService.exists(source)) return ResponseEntity.notFound().build()
-		if (crawlerService.isRunning(source)) return ResponseEntity.status(409)
-			.body("A crawl is already running for $source")
-		crawlerService.run(source)
-		return ResponseEntity.accepted().body("Crawl started for $source")
-	}
+    @PostMapping("/{source}")
+    fun triggerSource(
+        @PathVariable source: String,
+    ): ResponseEntity<String> {
+        if (!sourceService.exists(source)) return ResponseEntity.notFound().build()
+        if (crawlerService.isRunning(source)) {
+            return ResponseEntity
+                .status(409)
+                .body("A crawl is already running for $source")
+        }
+        crawlerService.run(source)
+        return ResponseEntity.accepted().body("Crawl started for $source")
+    }
 
-	@GetMapping
-	fun list(
-		@PageableDefault(sort = ["startedAt"], direction = Sort.Direction.DESC) pageable: Pageable
-	): Page<CrawlJobDTO> = crawlerService.listJobs(pageable)
+    @GetMapping
+    fun list(
+        @PageableDefault(sort = ["startedAt"], direction = Sort.Direction.DESC) pageable: Pageable,
+    ): Page<CrawlJobDTO> = crawlerService.listJobs(pageable)
 
-	@GetMapping("/events", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
-	fun events(): SseEmitter = crawlJobEventService.subscribe()
+    @GetMapping("/events", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    fun events(): SseEmitter = crawlJobEventService.subscribe()
 
-	@PostMapping("/{id}/cancel")
-	fun cancelJob(@PathVariable id: Long): ResponseEntity<String> {
-		val sourceName = crawlerService.getRunningSourceNameById(id) ?: return ResponseEntity.notFound().build()
-		crawlerService.startCancel(sourceName)
-		return ResponseEntity.accepted().body("Cancel request for $sourceName sent")
-	}
+    @PostMapping("/{id}/cancel")
+    fun cancelJob(
+        @PathVariable id: Long,
+    ): ResponseEntity<String> {
+        val sourceName = crawlerService.getRunningSourceNameById(id) ?: return ResponseEntity.notFound().build()
+        crawlerService.startCancel(sourceName)
+        return ResponseEntity.accepted().body("Cancel request for $sourceName sent")
+    }
 
-	@GetMapping("/{id}/errors")
-	fun getErrors(@PathVariable id: Long, pageable: Pageable): Page<CrawlJobErrorDTO> =
-		crawlerService.getErrorsById(id, pageable)
+    @GetMapping("/{id}/errors")
+    fun getErrors(
+        @PathVariable id: Long,
+        pageable: Pageable,
+    ): Page<CrawlJobErrorDTO> = crawlerService.getErrorsById(id, pageable)
 }

@@ -7,8 +7,11 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface BarcodeRepository : JpaRepository<Barcode, BarcodeId> {
-	fun findAllByIsbn(isbn: String): List<Barcode>
-	fun findAllByIsbnIn(isbns: List<String>): List<Barcode>
-	fun deleteAllByIsbn(isbn: String)
-	fun findFirstByValue(value: String): Barcode?
+    fun findAllByIsbn(isbn: String): List<Barcode>
+
+    fun findAllByIsbnIn(isbns: List<String>): List<Barcode>
+
+    fun deleteAllByIsbn(isbn: String)
+
+    fun findFirstByValue(value: String): Barcode?
 }

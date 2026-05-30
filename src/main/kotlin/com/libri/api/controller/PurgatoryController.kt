@@ -6,31 +6,46 @@ import com.libri.api.util.IsbnValidator
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 
-data class PurgatoryApproveRequest(val isbn: String)
+data class PurgatoryApproveRequest(
+    val isbn: String,
+)
 
 @RestController
 @RequestMapping("/api/v1/admin/purgatory")
-class PurgatoryController(private val purgatoryService: PurgatoryService) {
-	@GetMapping
-	fun list(@RequestParam(required = false) filter: String?, pageable: Pageable): Page<PurgatoryBookDTO> =
-		purgatoryService.list(pageable, filter)
+class PurgatoryController(
+    private val purgatoryService: PurgatoryService,
+) {
+    @GetMapping
+    fun list(
+        @RequestParam(required = false) filter: String?,
+        pageable: Pageable,
+    ): Page<PurgatoryBookDTO> = purgatoryService.list(pageable, filter)
 
-	@PostMapping("/{id}/approve")
-	fun approve(
-		@PathVariable id: Long,
-		@RequestBody request: PurgatoryApproveRequest,
-	): ResponseEntity<PurgatoryBookDTO> {
-		if (!IsbnValidator.isValid(request.isbn)) return ResponseEntity.badRequest().build()
-		return purgatoryService.approve(id, request.isbn)?.let {
-			ResponseEntity.ok(it)
-		} ?: ResponseEntity.notFound().build()
-	}
+    @PostMapping("/{id}/approve")
+    fun approve(
+        @PathVariable id: Long,
+        @RequestBody request: PurgatoryApproveRequest,
+    ): ResponseEntity<PurgatoryBookDTO> {
+        if (!IsbnValidator.isValid(request.isbn)) return ResponseEntity.badRequest().build()
+        return purgatoryService.approve(id, request.isbn)?.let {
+            ResponseEntity.ok(it)
+        } ?: ResponseEntity.notFound().build()
+    }
 
-	@DeleteMapping("/{id}")
-	fun delete(@PathVariable id: Long): ResponseEntity<Void> {
-		if (!purgatoryService.markDeleted(id)) return ResponseEntity.notFound().build()
-		return ResponseEntity.noContent().build()
-	}
+    @DeleteMapping("/{id}")
+    fun delete(
+        @PathVariable id: Long,
+    ): ResponseEntity<Void> {
+        if (!purgatoryService.markDeleted(id)) return ResponseEntity.notFound().build()
+        return ResponseEntity.noContent().build()
+    }
 }

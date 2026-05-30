@@ -9,14 +9,12 @@ import jakarta.persistence.Table
 @Entity
 @Table(name = "sources")
 class Source(
-	@Id
-	val name: String,
-
-	@Column(nullable = false)
-	val priority: Short,
-
-	@Column(nullable = false)
-	val enabled: Boolean = true,
+    @Id
+    val name: String,
+    @Column(nullable = false)
+    val priority: Short,
+    @Column(nullable = false)
+    val enabled: Boolean = true,
 ) {
-	fun toDTO() = SourceDTO(name, enabled)
+    fun toDTO() = SourceDTO(name, enabled)
 }

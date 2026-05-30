@@ -16,13 +16,14 @@ import org.springframework.scheduling.annotation.EnableScheduling
 class ApiApplication
 
 fun main(args: Array<String>) {
-	val dotenv = dotenv {
-		ignoreIfMissing = true
-	}
+    val dotenv =
+        dotenv {
+            ignoreIfMissing = true
+        }
 
-	dotenv.entries().forEach { entry ->
-		System.setProperty(entry.key, entry.value)
-	}
+    dotenv.entries().forEach { entry ->
+        System.setProperty(entry.key, entry.value)
+    }
 
-	runApplication<ApiApplication>(*args)
+    runApplication<ApiApplication>(*args)
 }

@@ -10,11 +10,12 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface PurgatoryBookRepository : JpaRepository<PurgatoryBook, Long> {
-	fun findAllByResolvedIsbnIsNullAndDeletedFalse(pageable: Pageable): Page<PurgatoryBook>
-	fun findAllByInvalidIsbnIn(map: List<String>): List<PurgatoryBook>
+    fun findAllByResolvedIsbnIsNullAndDeletedFalse(pageable: Pageable): Page<PurgatoryBook>
 
-	@NativeQuery(
-		"""
+    fun findAllByInvalidIsbnIn(map: List<String>): List<PurgatoryBook>
+
+    @NativeQuery(
+        """
 			SELECT * FROM (
 				SELECT *, source_name AS "sourcename" FROM purgatory
 				WHERE
@@ -34,7 +35,7 @@ interface PurgatoryBookRepository : JpaRepository<PurgatoryBook, Long> {
 				 similarity(title, :title) DESC
 			) as results
 		""",
-		countQuery = """
+        countQuery = """
 			SELECT count(1) FROM purgatory
 			WHERE
 			 resolved_isbn IS NULL AND
@@ -48,10 +49,10 @@ interface PurgatoryBookRepository : JpaRepository<PurgatoryBook, Long> {
 				 WHERE author ILIKE ('%' || :title || '%')
 			  )
 			 )
-		"""
-	)
-	fun findAllByTitleAndResolvedIsbnIsNullAndDeletedFalse(
-		@Param("title") title: String,
-		pageable: Pageable
-	): Page<PurgatoryBook>
+		""",
+    )
+    fun findAllByTitleAndResolvedIsbnIsNullAndDeletedFalse(
+        @Param("title") title: String,
+        pageable: Pageable,
+    ): Page<PurgatoryBook>
 }
