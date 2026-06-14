@@ -61,6 +61,17 @@ tasks.withType<Test> {
 jib {
     from {
         image = "gcr.io/distroless/java21-debian12"
+
+        platforms {
+            platform {
+                architecture = "amd64"
+                os = "linux"
+            }
+            platform {
+                architecture = "arm64"
+                os = "linux"
+            }
+        }
     }
 
     container {
