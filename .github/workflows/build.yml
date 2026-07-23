@@ -61,3 +61,19 @@ jobs:
             -Djib.to.auth.password=${{ secrets.GITHUB_TOKEN }} \
             -Djib.to.tags=${{ steps.tags.outputs.TAGS }} \
             -Dversion=${{ steps.version.outputs.APP_VERSION }}
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ORACLE_HOST }}
+          username: ${{ secrets.ORACLE_USER }}
+          key: ${{ secrets.ORACLE_SSH_KEY }}
+          script: |
+            cd /opt/libri
+            docker compose pull api
+            docker compose up -d api
+            docker image prune -f
