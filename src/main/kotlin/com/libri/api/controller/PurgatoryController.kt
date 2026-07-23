@@ -19,6 +19,10 @@ data class PurgatoryApproveRequest(
     val isbn: String,
 )
 
+data class PurgatoryBulkDeleteRequest(
+    val ids: List<Long>,
+)
+
 @RestController
 @RequestMapping("/api/v1/admin/purgatory")
 class PurgatoryController(
@@ -48,4 +52,14 @@ class PurgatoryController(
         if (!purgatoryService.markDeleted(id)) return ResponseEntity.notFound().build()
         return ResponseEntity.noContent().build()
     }
+
+    @DeleteMapping("/bulk")
+    fun deleteBulk(
+        @RequestBody request: PurgatoryBulkDeleteRequest,
+    ): ResponseEntity<Void> =
+        if (purgatoryService.markDeletedBulk(request.ids)) {
+            ResponseEntity.noContent().build()
+        } else {
+            ResponseEntity.notFound().build()
+        }
 }

@@ -77,11 +77,15 @@ class PurgatoryService(
     }
 
     @Transactional
-    fun markDeleted(id: Long): Boolean {
-        val book = purgatoryBookRepository.findByIdOrNull(id) ?: return false
-        book.deleted = true
-        purgatoryBookRepository.save(book)
-        storageService.deleteTransactional(book.invalidIsbn)
+    fun markDeleted(id: Long): Boolean = markDeletedBulk(listOf(id))
+
+    @Transactional
+    fun markDeletedBulk(ids: List<Long>): Boolean {
+        if (ids.isEmpty()) return true
+        val existing = purgatoryBookRepository.findAllById(ids)
+        if (existing.isEmpty()) return false
+        existing.forEach { storageService.deleteTransactional(it.invalidIsbn) }
+        purgatoryBookRepository.markDeletedByIdIn(ids)
         return true
     }
 }
