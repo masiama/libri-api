@@ -2,6 +2,7 @@ package com.libri.api.controller
 
 import com.libri.api.dto.BookDTO
 import com.libri.api.service.BookService
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
@@ -29,7 +30,7 @@ class BookController(
     @GetMapping
     fun list(
         @RequestParam(required = false) filter: String?,
-        pageable: Pageable,
+        @ParameterObject pageable: Pageable,
     ): Page<BookDTO> = bookService.list(pageable, filter)
 
     @GetMapping("/{code}")

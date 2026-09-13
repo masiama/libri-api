@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Install once: make install-hooks
+set -euo pipefail
+
+if ! git diff --cached --name-only --diff-filter=ACMR \
+  | grep -qE '^src/main/kotlin/com/libri/api/(controller|dto|entity)/'; then
+  exit 0
+fi
+
+if ! ./gradlew generateOpenApiDocs -q; then
+  echo "error: failed to generate openapi.json." >&2
+  exit 1
+fi
+
+if ! git diff --quiet -- openapi/openapi.json; then
+  echo "error: openapi/openapi.json is out of date." >&2
+  exit 1
+fi

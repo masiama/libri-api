@@ -5,6 +5,8 @@ import com.libri.api.dto.CrawlJobErrorDTO
 import com.libri.api.service.CrawlJobEventService
 import com.libri.api.service.CrawlerService
 import com.libri.api.service.SourceService
+import io.swagger.v3.oas.annotations.Operation
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -53,9 +55,12 @@ class CrawlerController(
 
     @GetMapping
     fun list(
-        @PageableDefault(sort = ["startedAt"], direction = Sort.Direction.DESC) pageable: Pageable,
+        @ParameterObject
+        @PageableDefault(sort = ["startedAt"], direction = Sort.Direction.DESC)
+        pageable: Pageable,
     ): Page<CrawlJobDTO> = crawlerService.listJobs(pageable)
 
+    @Operation(hidden = true)
     @GetMapping("/events", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     fun events(): SseEmitter = crawlJobEventService.subscribe()
 
@@ -71,6 +76,6 @@ class CrawlerController(
     @GetMapping("/{id}/errors")
     fun getErrors(
         @PathVariable id: Long,
-        pageable: Pageable,
+        @ParameterObject pageable: Pageable,
     ): Page<CrawlJobErrorDTO> = crawlerService.getErrorsById(id, pageable)
 }

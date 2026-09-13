@@ -27,10 +27,13 @@ class SecurityConfig(
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth
-                    .requestMatchers("/api/v1/ping")
-                    .permitAll()
-                    .requestMatchers("/api/v1/images/**")
-                    .permitAll()
+                    .requestMatchers(
+                        "/v3/api-docs/**",
+                        "/swagger-ui.html",
+                        "/swagger-ui/**",
+                        "/api/v1/ping",
+                        "/api/v1/images/**",
+                    ).permitAll()
                     .requestMatchers("/api/v1/admin/**")
                     .hasRole("ADMIN")
                     .anyRequest()

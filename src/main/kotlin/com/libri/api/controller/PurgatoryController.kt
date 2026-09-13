@@ -3,6 +3,7 @@ package com.libri.api.controller
 import com.libri.api.dto.PurgatoryBookDTO
 import com.libri.api.service.PurgatoryService
 import com.libri.api.util.IsbnValidator
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
@@ -31,7 +32,7 @@ class PurgatoryController(
     @GetMapping
     fun list(
         @RequestParam(required = false) filter: String?,
-        pageable: Pageable,
+        @ParameterObject pageable: Pageable,
     ): Page<PurgatoryBookDTO> = purgatoryService.list(pageable, filter)
 
     @PostMapping("/{id}/approve")
