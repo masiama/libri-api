@@ -29,7 +29,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
                 "type": "object",
                 "properties": {
@@ -52,12 +52,15 @@
           "200": {
             "description": "OK",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BookDTO"
                 }
               }
             }
+          },
+          "404": {
+            "description": "Not Found"
           }
         }
       },
@@ -77,8 +80,11 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
           }
         }
       }
@@ -88,7 +94,7 @@
         "tags": [
           "purgatory-controller"
         ],
-        "operationId": "approve",
+        "operationId": "approvePurgatoryBook",
         "parameters": [
           {
             "name": "id",
@@ -114,12 +120,18 @@
           "200": {
             "description": "OK",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PurgatoryBookDTO"
                 }
               }
             }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
           }
         }
       }
@@ -129,7 +141,7 @@
         "tags": [
           "crawler-controller"
         ],
-        "operationId": "list",
+        "operationId": "listCrawlJobs",
         "parameters": [
           {
             "name": "page",
@@ -173,7 +185,7 @@
           "200": {
             "description": "OK",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PagedModelCrawlJobDTO"
                 }
@@ -186,12 +198,22 @@
         "tags": [
           "crawler-controller"
         ],
-        "operationId": "triggerAll",
+        "operationId": "triggerAllCrawls",
         "responses": {
-          "200": {
-            "description": "OK",
+          "202": {
+            "description": "Accepted",
             "content": {
-              "*/*": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
                 "schema": {
                   "type": "string"
                 }
@@ -206,7 +228,7 @@
         "tags": [
           "crawler-controller"
         ],
-        "operationId": "triggerSource",
+        "operationId": "triggerSourceCrawl",
         "parameters": [
           {
             "name": "source",
@@ -218,10 +240,23 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
+          "202": {
+            "description": "Accepted",
             "content": {
-              "*/*": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
                 "schema": {
                   "type": "string"
                 }
@@ -236,7 +271,7 @@
         "tags": [
           "crawler-controller"
         ],
-        "operationId": "cancelJob",
+        "operationId": "cancelCrawlJob",
         "parameters": [
           {
             "name": "id",
@@ -249,15 +284,18 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
+          "202": {
+            "description": "Accepted",
             "content": {
-              "*/*": {
+              "text/plain": {
                 "schema": {
                   "type": "string"
                 }
               }
             }
+          },
+          "404": {
+            "description": "Not Found"
           }
         }
       }
@@ -270,7 +308,7 @@
         "operationId": "createBook",
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
                 "type": "object",
                 "properties": {
@@ -294,12 +332,15 @@
           "200": {
             "description": "OK",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BookDTO"
                 }
               }
             }
+          },
+          "404": {
+            "description": "Not Found"
           }
         }
       }
@@ -309,12 +350,12 @@
         "tags": [
           "source-controller"
         ],
-        "operationId": "list_1",
+        "operationId": "listSources",
         "responses": {
           "200": {
             "description": "OK",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
@@ -337,7 +378,7 @@
           "200": {
             "description": "OK",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PingResponse"
                 }
@@ -383,7 +424,7 @@
         "tags": [
           "book-controller"
         ],
-        "operationId": "list_2",
+        "operationId": "listBooks",
         "parameters": [
           {
             "name": "filter",
@@ -432,7 +473,7 @@
           "200": {
             "description": "OK",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PagedModelBookDTO"
                 }
@@ -447,7 +488,7 @@
         "tags": [
           "book-controller"
         ],
-        "operationId": "getByIsbn",
+        "operationId": "getBookByIsbn",
         "parameters": [
           {
             "name": "code",
@@ -462,12 +503,15 @@
           "200": {
             "description": "OK",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BookDTO"
                 }
               }
             }
+          },
+          "404": {
+            "description": "Not Found"
           }
         }
       }
@@ -477,7 +521,7 @@
         "tags": [
           "purgatory-controller"
         ],
-        "operationId": "list_3",
+        "operationId": "listPurgatoryBooks",
         "parameters": [
           {
             "name": "filter",
@@ -526,7 +570,7 @@
           "200": {
             "description": "OK",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PagedModelPurgatoryBookDTO"
                 }
@@ -541,7 +585,7 @@
         "tags": [
           "crawler-controller"
         ],
-        "operationId": "getErrors",
+        "operationId": "listCrawlJobErrors",
         "parameters": [
           {
             "name": "id",
@@ -591,7 +635,7 @@
           "200": {
             "description": "OK",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PagedModelCrawlJobErrorDTO"
                 }
@@ -606,7 +650,7 @@
         "tags": [
           "purgatory-controller"
         ],
-        "operationId": "delete",
+        "operationId": "deletePurgatoryBook",
         "parameters": [
           {
             "name": "id",
@@ -619,8 +663,11 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
           }
         }
       }
@@ -630,7 +677,7 @@
         "tags": [
           "purgatory-controller"
         ],
-        "operationId": "deleteBulk",
+        "operationId": "deletePurgatoryBooksBulk",
         "requestBody": {
           "content": {
             "application/json": {
@@ -642,8 +689,11 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
           }
         }
       }
@@ -653,7 +703,7 @@
         "tags": [
           "admin-book-controller"
         ],
-        "operationId": "deleteBooks",
+        "operationId": "deleteBooksBulk",
         "requestBody": {
           "content": {
             "application/json": {
@@ -665,8 +715,11 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
           }
         }
       }

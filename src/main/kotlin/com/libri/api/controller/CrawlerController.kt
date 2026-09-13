@@ -6,6 +6,10 @@ import com.libri.api.service.CrawlJobEventService
 import com.libri.api.service.CrawlerService
 import com.libri.api.service.SourceService
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -27,7 +31,12 @@ class CrawlerController(
     private val crawlJobEventService: CrawlJobEventService,
     private val sourceService: SourceService,
 ) {
-    @PostMapping
+    @Operation(operationId = "triggerAllCrawls")
+    @ApiResponses(
+        ApiResponse(responseCode = "202", content = [Content(schema = Schema(type = "string"))]),
+        ApiResponse(responseCode = "409", content = [Content(schema = Schema(type = "string"))]),
+    )
+    @PostMapping(produces = [MediaType.TEXT_PLAIN_VALUE])
     fun triggerAll(): ResponseEntity<String> {
         val availableSources = sourceService.listEnabledNotRunning()
 
@@ -39,7 +48,13 @@ class CrawlerController(
         return ResponseEntity.accepted().body("Crawl started for ${availableSources.size} enabled sources")
     }
 
-    @PostMapping("/{source}")
+    @Operation(operationId = "triggerSourceCrawl")
+    @ApiResponses(
+        ApiResponse(responseCode = "202", content = [Content(schema = Schema(type = "string"))]),
+        ApiResponse(responseCode = "404", content = [Content()]),
+        ApiResponse(responseCode = "409", content = [Content(schema = Schema(type = "string"))]),
+    )
+    @PostMapping("/{source}", produces = [MediaType.TEXT_PLAIN_VALUE])
     fun triggerSource(
         @PathVariable source: String,
     ): ResponseEntity<String> {
@@ -53,7 +68,8 @@ class CrawlerController(
         return ResponseEntity.accepted().body("Crawl started for $source")
     }
 
-    @GetMapping
+    @Operation(operationId = "listCrawlJobs")
+    @GetMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
     fun list(
         @ParameterObject
         @PageableDefault(sort = ["startedAt"], direction = Sort.Direction.DESC)
@@ -64,7 +80,12 @@ class CrawlerController(
     @GetMapping("/events", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     fun events(): SseEmitter = crawlJobEventService.subscribe()
 
-    @PostMapping("/{id}/cancel")
+    @Operation(operationId = "cancelCrawlJob")
+    @ApiResponses(
+        ApiResponse(responseCode = "202", content = [Content(schema = Schema(type = "string"))]),
+        ApiResponse(responseCode = "404", content = [Content()]),
+    )
+    @PostMapping("/{id}/cancel", produces = [MediaType.TEXT_PLAIN_VALUE])
     fun cancelJob(
         @PathVariable id: Long,
     ): ResponseEntity<String> {
@@ -73,7 +94,8 @@ class CrawlerController(
         return ResponseEntity.accepted().body("Cancel request for $sourceName sent")
     }
 
-    @GetMapping("/{id}/errors")
+    @Operation(operationId = "listCrawlJobErrors")
+    @GetMapping("/{id}/errors", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getErrors(
         @PathVariable id: Long,
         @ParameterObject pageable: Pageable,

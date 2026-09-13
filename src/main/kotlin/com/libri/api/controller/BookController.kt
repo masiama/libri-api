@@ -2,9 +2,14 @@ package com.libri.api.controller
 
 import com.libri.api.dto.BookDTO
 import com.libri.api.service.BookService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -23,16 +28,22 @@ data class BookBatchDeleteRequest(
 )
 
 @RestController
-@RequestMapping("/api/v1/books")
+@RequestMapping("/api/v1/books", produces = [MediaType.APPLICATION_JSON_VALUE])
 class BookController(
     private val bookService: BookService,
 ) {
+    @Operation(operationId = "listBooks")
     @GetMapping
     fun list(
         @RequestParam(required = false) filter: String?,
         @ParameterObject pageable: Pageable,
     ): Page<BookDTO> = bookService.list(pageable, filter)
 
+    @Operation(operationId = "getBookByIsbn")
+    @ApiResponses(
+        ApiResponse(responseCode = "200"),
+        ApiResponse(responseCode = "404", content = [Content()]),
+    )
     @GetMapping("/{code}")
     fun getByIsbn(
         @PathVariable code: String,
@@ -43,11 +54,16 @@ class BookController(
 }
 
 @RestController
-@RequestMapping("/api/v1/admin/books")
+@RequestMapping("/api/v1/admin/books", produces = [MediaType.APPLICATION_JSON_VALUE])
 class AdminBookController(
     private val bookService: BookService,
 ) {
-    @PostMapping
+    @Operation(operationId = "createBook")
+    @ApiResponses(
+        ApiResponse(responseCode = "200"),
+        ApiResponse(responseCode = "404", content = [Content()]),
+    )
+    @PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun createBook(
         @RequestPart("book") newBook: BookDTO,
         @RequestPart("file") image: MultipartFile,
@@ -56,7 +72,12 @@ class AdminBookController(
             ResponseEntity.ok(it)
         } ?: ResponseEntity.notFound().build()
 
-    @PutMapping("/{isbn}")
+    @Operation(operationId = "updateBook")
+    @ApiResponses(
+        ApiResponse(responseCode = "200"),
+        ApiResponse(responseCode = "404", content = [Content()]),
+    )
+    @PutMapping("/{isbn}", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun updateBook(
         @PathVariable isbn: String,
         @RequestPart("book") newBook: BookDTO,
@@ -66,6 +87,11 @@ class AdminBookController(
             ResponseEntity.ok(it)
         } ?: ResponseEntity.notFound().build()
 
+    @Operation(operationId = "deleteBook")
+    @ApiResponses(
+        ApiResponse(responseCode = "204", content = [Content()]),
+        ApiResponse(responseCode = "404", content = [Content()]),
+    )
     @DeleteMapping("/{isbn}")
     fun deleteBook(
         @PathVariable isbn: String,
@@ -76,6 +102,11 @@ class AdminBookController(
             ResponseEntity.notFound().build()
         }
 
+    @Operation(operationId = "deleteBooksBulk")
+    @ApiResponses(
+        ApiResponse(responseCode = "204", content = [Content()]),
+        ApiResponse(responseCode = "404", content = [Content()]),
+    )
     @DeleteMapping("/bulk")
     fun deleteBooks(
         @RequestBody request: BookBatchDeleteRequest,
