@@ -736,7 +736,11 @@
           "type": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "type",
+          "value"
+        ]
       },
       "BookDTO": {
         "type": "object",
@@ -765,7 +769,15 @@
               "$ref": "#/components/schemas/BarcodeDTO"
             }
           }
-        }
+        },
+        "required": [
+          "authors",
+          "barcodes",
+          "isbn",
+          "sourceName",
+          "title",
+          "url"
+        ]
       },
       "PurgatoryApproveRequest": {
         "type": "object",
@@ -773,7 +785,10 @@
           "isbn": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "isbn"
+        ]
       },
       "PurgatoryBookDTO": {
         "type": "object",
@@ -804,7 +819,16 @@
             "type": "string",
             "format": "date-time"
           }
-        }
+        },
+        "required": [
+          "authors",
+          "createdAt",
+          "id",
+          "invalidIsbn",
+          "sourceName",
+          "title",
+          "url"
+        ]
       },
       "SourceDTO": {
         "type": "object",
@@ -815,7 +839,11 @@
           "enabled": {
             "type": "boolean"
           }
-        }
+        },
+        "required": [
+          "enabled",
+          "name"
+        ]
       },
       "PingResponse": {
         "type": "object",
@@ -826,7 +854,11 @@
           "version": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "status",
+          "version"
+        ]
       },
       "PageMetadata": {
         "type": "object",
@@ -847,7 +879,13 @@
             "type": "integer",
             "format": "int64"
           }
-        }
+        },
+        "required": [
+          "number",
+          "size",
+          "totalElements",
+          "totalPages"
+        ]
       },
       "PagedModelBookDTO": {
         "type": "object",
@@ -921,7 +959,17 @@
             "type": "integer",
             "format": "int64"
           }
-        }
+        },
+        "required": [
+          "booksFound",
+          "errorCount",
+          "errorMessage",
+          "finishedAt",
+          "id",
+          "sourceName",
+          "startedAt",
+          "status"
+        ]
       },
       "PagedModelCrawlJobDTO": {
         "type": "object",
@@ -957,7 +1005,13 @@
             "type": "string",
             "format": "date-time"
           }
-        }
+        },
+        "required": [
+          "id",
+          "message",
+          "occurredAt",
+          "url"
+        ]
       },
       "PagedModelCrawlJobErrorDTO": {
         "type": "object",
@@ -983,7 +1037,10 @@
               "format": "int64"
             }
           }
-        }
+        },
+        "required": [
+          "ids"
+        ]
       },
       "BookBatchDeleteRequest": {
         "type": "object",
@@ -994,7 +1051,10 @@
               "type": "string"
             }
           }
-        }
+        },
+        "required": [
+          "isbns"
+        ]
       }
     }
   }
