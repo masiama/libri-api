@@ -33,8 +33,9 @@ class StaleJobScheduler(
             job.booksFound = progressTracker.get(job.id) ?: job.booksFound
             crawlJobRepository.save(job).also(crawlJobEventService::publishUpdated)
             redisService.deleteSourceLock(job.sourceName)
+            redisService.startCancel(job.sourceName)
             progressTracker.clear(job.id)
-            logger.info("Killed stale job ${job.id} for source ${job.sourceName}, lock released")
+            logger.info("Killed stale job ${job.id} for source ${job.sourceName}, lock released, cancel signal sent")
         }
     }
 }

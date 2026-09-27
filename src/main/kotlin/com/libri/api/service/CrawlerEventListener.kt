@@ -68,6 +68,7 @@ class CrawlerEventListener(
                 flushBooks()
 
                 val job = crawlJobRepository.findById(event.crawlId).orElse(null) ?: return
+                if (job.status != CrawlStatus.RUNNING) return
                 val errorCount = crawlJobErrorRepository.countByCrawlJobId(event.crawlId)
                 job.status = CrawlStatus.SUCCESS
                 job.booksFound = event.booksFound
@@ -82,6 +83,7 @@ class CrawlerEventListener(
                 flushBooks()
 
                 val job = crawlJobRepository.findById(event.crawlId).orElse(null) ?: return
+                if (job.status != CrawlStatus.RUNNING) return
                 val errorCount = crawlJobErrorRepository.countByCrawlJobId(event.crawlId)
                 job.status = CrawlStatus.FAILED
                 job.errorMessage = event.error.take(2000)
@@ -95,16 +97,18 @@ class CrawlerEventListener(
             is CrawlerEvent.CancelledEvent -> {
                 flushBooks()
 
-                val job = crawlJobRepository.findById(event.crawlId).orElse(null) ?: return
-                val errorCount = crawlJobErrorRepository.countByCrawlJobId(event.crawlId)
-                job.status = CrawlStatus.CANCELLED
-                job.booksFound = event.booksFound
-                job.finishedAt = Instant.now()
-                crawlJobRepository.save(job).also {
-                    crawlJobEventService.publishUpdated(it, errorCount)
+                val job = crawlJobRepository.findById(event.crawlId).orElse(null)
+                if (job != null && job.status == CrawlStatus.RUNNING) {
+                    val errorCount = crawlJobErrorRepository.countByCrawlJobId(event.crawlId)
+                    job.status = CrawlStatus.CANCELLED
+                    job.booksFound = event.booksFound
+                    job.finishedAt = Instant.now()
+                    crawlJobRepository.save(job).also {
+                        crawlJobEventService.publishUpdated(it, errorCount)
+                    }
+                    progressTracker.clear(job.id)
                 }
-                progressTracker.clear(job.id)
-                redisService.stopCancel(job.sourceName)
+                job?.let { redisService.stopCancel(it.sourceName) }
             }
 
             is CrawlerEvent.HeartbeatEvent -> {
