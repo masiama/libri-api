@@ -19,7 +19,10 @@ class StorageConfig {
         }
     }
 
-    fun resolveImagePath(isbn: String): File {
+    fun resolveImagePath(
+        isbn: String,
+        side: ImageSide = ImageSide.FRONT,
+    ): File {
         val hash =
             MessageDigest
                 .getInstance("MD5")
@@ -29,6 +32,7 @@ class StorageConfig {
         val shard1 = hash.substring(0, 2)
         val shard2 = hash.substring(2, 4)
 
-        return File(imagesDir, "$shard1/$shard2/$isbn.jpg")
+        val name = if (side == ImageSide.FRONT) isbn else "${isbn}_${side.value}"
+        return File(imagesDir, "$shard1/$shard2/$name.jpg")
     }
 }

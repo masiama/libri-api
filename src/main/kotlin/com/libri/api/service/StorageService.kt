@@ -1,5 +1,6 @@
 package com.libri.api.service
 
+import com.libri.api.config.ImageSide
 import com.libri.api.config.StorageConfig
 import com.libri.api.exception.ImageNotFoundException
 import org.springframework.stereotype.Service
@@ -30,8 +31,11 @@ class StorageService(
         registerRollback(destination, previousContents)
     }
 
-    fun load(isbn: String): File {
-        val file = storageConfig.resolveImagePath(isbn)
+    fun load(
+        isbn: String,
+        side: ImageSide = ImageSide.FRONT,
+    ): File {
+        val file = storageConfig.resolveImagePath(isbn, side)
         if (!file.exists()) throw ImageNotFoundException(isbn)
         return file
     }

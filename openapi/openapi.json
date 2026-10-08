@@ -402,6 +402,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "side",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "front"
+            }
           }
         ],
         "responses": {
