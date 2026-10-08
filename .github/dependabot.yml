@@ -6,4 +6,4 @@ updates:
       interval: "weekly"
     groups:
       kotlin:
-        patterns: ["org.jetbrains.kotlin*"]
+        patterns: ["jvm", "plugin.spring", "plugin.jpa", "org.jetbrains.kotlin*"]
