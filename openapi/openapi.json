@@ -881,6 +881,28 @@
           "name"
         ]
       },
+      "CrawlerStatus": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "online",
+              "offline"
+            ]
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "version"
+        ]
+      },
       "PingResponse": {
         "type": "object",
         "properties": {
@@ -889,9 +911,13 @@
           },
           "version": {
             "type": "string"
+          },
+          "crawler": {
+            "$ref": "#/components/schemas/CrawlerStatus"
           }
         },
         "required": [
+          "crawler",
           "status",
           "version"
         ]

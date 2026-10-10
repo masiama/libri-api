@@ -18,6 +18,7 @@ class RedisService(
     private val existingUrlsSet = "books:existing_urls"
     private val eventsQueue = "crawler:events"
     private val commandsQueue = "crawler:commands"
+    private val crawlerAliveKey = "crawler:alive"
 
     private fun lockKey(sourceName: String) = "crawler:lock:$sourceName"
 
@@ -40,6 +41,8 @@ class RedisService(
             redisTemplate.opsForSet().add(existingUrlsSet, *chunk.toTypedArray())
         }
     }
+
+    fun crawlerVersion(): String? = redisTemplate.opsForValue().get(crawlerAliveKey)
 
     fun deleteSourceLock(sourceName: String): Boolean? = redisTemplate.delete(lockKey(sourceName))
 
