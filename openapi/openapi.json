@@ -213,9 +213,9 @@
           "409": {
             "description": "Conflict",
             "content": {
-              "text/plain": {
+              "application/problem+json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -256,9 +256,9 @@
           "409": {
             "description": "Conflict",
             "content": {
-              "text/plain": {
+              "application/problem+json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -838,6 +838,33 @@
           "title",
           "url"
         ]
+      },
+      "ProblemDetail": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "format": "uri"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        }
       },
       "SourceDTO": {
         "type": "object",
