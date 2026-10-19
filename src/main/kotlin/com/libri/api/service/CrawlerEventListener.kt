@@ -54,7 +54,7 @@ class CrawlerEventListener(
             }
 
             is CrawlerEvent.ProgressEvent -> {
-                crawlJobEventService.publishProgress(event.crawlId, event.booksFound)
+                crawlJobEventService.publishProgress(event.crawlId, event.booksFound, event.estimatedDurationMs)
                 progressTracker.update(event.crawlId, event.booksFound)
             }
 

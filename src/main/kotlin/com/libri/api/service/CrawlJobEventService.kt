@@ -41,8 +41,12 @@ class CrawlJobEventService {
     fun publishProgress(
         crawlId: Long,
         booksFound: Int,
+        estimatedDurationMs: Long?,
     ) {
-        publish("crawl-job-progress", mapOf("id" to crawlId, "booksFound" to booksFound))
+        publish(
+            "crawl-job-progress",
+            mapOf("id" to crawlId, "booksFound" to booksFound, "estimatedDurationMs" to estimatedDurationMs),
+        )
     }
 
     private fun publish(

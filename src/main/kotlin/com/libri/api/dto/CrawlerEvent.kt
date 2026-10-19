@@ -28,6 +28,7 @@ sealed class CrawlerEvent {
     data class ProgressEvent(
         override val crawlId: Long,
         val booksFound: Int,
+        val estimatedDurationMs: Long? = null,
     ) : CrawlerEvent()
 
     data class CompletedEvent(
