@@ -25,6 +25,19 @@ spring:
 server:
   port: 8080
 
+management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  metrics:
+    distribution:
+      slo:
+        http.server.requests: 50ms,100ms,250ms,500ms,1s,2500ms,5s
+        libri.book.batch.save: 100ms,250ms,500ms,1s,2500ms,5s,10s,30s
+
 libri:
   storage:
     images-dir: ${IMAGES_DIR}

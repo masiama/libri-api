@@ -7,6 +7,7 @@ import com.libri.api.entity.CrawlJobError
 import com.libri.api.entity.CrawlStatus
 import com.libri.api.repository.CrawlJobErrorRepository
 import com.libri.api.repository.CrawlJobRepository
+import io.micrometer.core.instrument.MeterRegistry
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
 import org.slf4j.LoggerFactory
@@ -22,11 +23,14 @@ class CrawlerEventListener(
     private val crawlJobEventService: CrawlJobEventService,
     private val bookService: BookService,
     private val progressTracker: CrawlProgressTracker,
+    meterRegistry: MeterRegistry,
 ) {
     private var running = true
     private val batchSizeThreshold = 300
     private val bookBuffer = mutableListOf<BookDTO>()
     private val logger = LoggerFactory.getLogger(CrawlerEventListener::class.java)
+    private val batchSaveTimer = meterRegistry.timer("libri.book.batch.save")
+    private val booksSavedCounter = meterRegistry.counter("libri.books.saved")
 
     @PostConstruct
     fun startListening() {
@@ -126,7 +130,8 @@ class CrawlerEventListener(
                 copy
             }
 
-        bookService.upsertBatch(batchToSave)
+        batchSaveTimer.record(Runnable { bookService.upsertBatch(batchToSave) })
+        booksSavedCounter.increment(batchToSave.size.toDouble())
     }
 
     @PreDestroy

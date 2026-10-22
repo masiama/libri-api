@@ -33,6 +33,9 @@ class SecurityConfig(
                         "/swagger-ui/**",
                         "/api/v1/ping",
                         "/api/v1/images/**",
+                        // Served only on the private management port
+                        "/actuator/health",
+                        "/actuator/prometheus",
                     ).permitAll()
                     .requestMatchers("/api/v1/admin/**")
                     .hasRole("ADMIN")

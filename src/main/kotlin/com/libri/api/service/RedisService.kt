@@ -26,6 +26,8 @@ class RedisService(
 
     fun readCrawlEvent(): String? = redisTemplate.opsForList().rightPop(eventsQueue, Duration.ofSeconds(5))
 
+    fun eventsQueueLength(): Long? = redisTemplate.opsForList().size(eventsQueue)
+
     fun startCancel(sourceName: String) = redisTemplate.opsForValue().set(cancelKey(sourceName), "1", Duration.ofMinutes(10))
 
     fun stopCancel(sourceName: String): Boolean? = redisTemplate.delete(cancelKey(sourceName))
