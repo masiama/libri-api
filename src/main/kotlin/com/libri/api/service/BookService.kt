@@ -54,6 +54,9 @@ class BookService(
 
     fun getByCode(code: String): BookDTO? {
         bookRepository.findByIdOrNull(code)?.let { return toDTO(it) }
+        IsbnValidator.otherForm(code)?.let { other ->
+            bookRepository.findByIdOrNull(other)?.let { return toDTO(it) }
+        }
 
         val barcode = barcodeRepository.findFirstByValue(code) ?: return null
         return bookRepository.findByIdOrNull(barcode.isbn)?.let { toDTO(it) }
