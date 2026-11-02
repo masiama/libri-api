@@ -22,10 +22,7 @@ interface BookRepository : JpaRepository<Book, String> {
 				 title ILIKE (:title || '%')
 				 OR title ILIKE ('% ' || :title || '%')
 				 OR title % :title
-				 OR EXISTS (
-					SELECT 1 FROM jsonb_array_elements_text(authors) AS author
-					WHERE author ILIKE ('%' || :title || '%')
-				 )
+				 OR authors_text ILIKE ('%' || :title || '%')
 				ORDER BY
 				 (title ILIKE (:title || '%')) DESC,
 				 similarity(title, :title) DESC
@@ -37,10 +34,7 @@ interface BookRepository : JpaRepository<Book, String> {
 			 title ILIKE (:title || '%')
 			 OR title ILIKE ('% ' || :title || '%')
 			 OR title % :title
-			 OR EXISTS (
-			 	SELECT 1 FROM jsonb_array_elements_text(authors) AS author
-			 	WHERE author ILIKE ('%' || :title || '%')
-			 )
+			 OR authors_text ILIKE ('%' || :title || '%')
 		""",
     )
     fun searchByTitle(
