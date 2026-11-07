@@ -6,7 +6,7 @@ plugins {
     kotlin("plugin.jpa") version "2.4.10"
     id("com.google.cloud.tools.jib") version "3.5.4"
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
-    id("org.springdoc.openapi-gradle-plugin") version "1.9.0"
+    id("org.springdoc.openapi-gradle-plugin") version "2.0.0"
 }
 
 group = "com.libri"
