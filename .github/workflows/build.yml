@@ -29,6 +29,8 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      - uses: gradle/actions/setup-gradle@v6
+
       - id: meta
         uses: docker/metadata-action@v6
         with:

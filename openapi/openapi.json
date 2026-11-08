@@ -961,7 +961,11 @@
           "page": {
             "$ref": "#/components/schemas/PageMetadata"
           }
-        }
+        },
+        "required": [
+          "content",
+          "page"
+        ]
       },
       "PagedModelPurgatoryBookDTO": {
         "type": "object",
@@ -975,7 +979,11 @@
           "page": {
             "$ref": "#/components/schemas/PageMetadata"
           }
-        }
+        },
+        "required": [
+          "content",
+          "page"
+        ]
       },
       "CrawlJobDTO": {
         "type": "object",
@@ -1045,7 +1053,11 @@
           "page": {
             "$ref": "#/components/schemas/PageMetadata"
           }
-        }
+        },
+        "required": [
+          "content",
+          "page"
+        ]
       },
       "CrawlJobErrorDTO": {
         "type": "object",
@@ -1087,7 +1099,11 @@
           "page": {
             "$ref": "#/components/schemas/PageMetadata"
           }
-        }
+        },
+        "required": [
+          "content",
+          "page"
+        ]
       },
       "PurgatoryBulkDeleteRequest": {
         "type": "object",
