@@ -31,6 +31,8 @@ class CrawlerEventListener(
     private val logger = LoggerFactory.getLogger(CrawlerEventListener::class.java)
     private val batchSaveTimer = meterRegistry.timer("libri.book.batch.save")
     private val booksSavedCounter = meterRegistry.counter("libri.books.saved")
+    private val crawlErrorsCounter = meterRegistry.counter("libri.crawl.errors")
+    private val crawlsFailedCounter = meterRegistry.counter("libri.crawl.failed")
 
     @PostConstruct
     fun startListening() {
@@ -63,6 +65,7 @@ class CrawlerEventListener(
             }
 
             is CrawlerEvent.CrawlErrorEvent -> {
+                crawlErrorsCounter.increment()
                 crawlJobErrorRepository.save(
                     CrawlJobError(crawlJobId = event.crawlId, message = event.error, url = event.url),
                 )
@@ -84,6 +87,7 @@ class CrawlerEventListener(
             }
 
             is CrawlerEvent.ErrorEvent -> {
+                crawlsFailedCounter.increment()
                 flushBooks()
 
                 val job = crawlJobRepository.findById(event.crawlId).orElse(null) ?: return
