@@ -12,19 +12,12 @@ class AppInfo(
 
     private fun resolveVersion(): String = if (!envVersion.isNullOrBlank()) envVersion else resolveGitVersion()
 
-    private fun resolveGitVersion(): String =
-        try {
-            runCommand("git", "describe", "--tags", "--exact-match").ifBlank { fallbackToSha() }
-        } catch (_: Exception) {
-            fallbackToSha()
-        }
-
-    private fun fallbackToSha(): String =
-        try {
-            "dev-${runCommand("git", "rev-parse", "--short", "HEAD")}"
-        } catch (_: Exception) {
-            "dev"
-        }
+    private fun resolveGitVersion(): String {
+        val tag =
+            runCatching { runCommand("git", "describe", "--tags", "--abbrev=0") }.getOrDefault("").ifBlank { "dev" }
+        val sha = runCatching { runCommand("git", "rev-parse", "--short", "HEAD") }.getOrDefault("")
+        return if (sha.isBlank()) tag else "$tag-$sha"
+    }
 
     private fun runCommand(vararg command: String): String =
         ProcessBuilder(*command)

@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - uses: docker/login-action@v4
         with:
@@ -49,11 +51,7 @@ jobs:
       - name: Compute APP_VERSION
         id: version
         run: |
-          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            echo "APP_VERSION=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
-          else
-            echo "APP_VERSION=dev-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
-          fi
+          echo "APP_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo dev)-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
       - name: Build and push API image
         run: |
