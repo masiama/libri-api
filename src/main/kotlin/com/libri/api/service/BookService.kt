@@ -1,5 +1,6 @@
 package com.libri.api.service
 
+import com.libri.api.config.ImageSide
 import com.libri.api.config.StorageConfig
 import com.libri.api.dto.BarcodeDTO
 import com.libri.api.dto.BookDTO
@@ -80,6 +81,7 @@ class BookService(
         isbn: String,
         newBook: BookDTO,
         image: MultipartFile?,
+        extraImages: Map<ImageSide, MultipartFile> = emptyMap(),
     ): BookDTO? {
         if (!bookRepository.existsById(isbn)) {
             return null
@@ -88,6 +90,7 @@ class BookService(
         if (image != null && !image.isEmpty) {
             storageService.storeTransactional(isbn, image)
         }
+        storeExtraImages(isbn, extraImages)
 
         val updatedBook = newBook.copy(isbn = isbn).toEntity()
         val saved = bookRepository.save(updatedBook)
@@ -104,13 +107,22 @@ class BookService(
     fun createBook(
         newBook: BookDTO,
         image: MultipartFile,
+        extraImages: Map<ImageSide, MultipartFile> = emptyMap(),
     ): BookDTO? {
         if (bookRepository.existsById(newBook.isbn) || image.isEmpty) {
             return null
         }
 
         storageService.storeTransactional(newBook.isbn, image)
+        storeExtraImages(newBook.isbn, extraImages)
         return toDTO(bookRepository.save(newBook.toEntity()))
+    }
+
+    private fun storeExtraImages(
+        isbn: String,
+        images: Map<ImageSide, MultipartFile>,
+    ) = images.forEach { (side, file) ->
+        if (!file.isEmpty) storageService.storeTransactional(isbn, file, side)
     }
 
     @Transactional
@@ -134,13 +146,15 @@ class BookService(
         val trashDir = File(storageConfig.imagesDir, ".trash/${System.currentTimeMillis()}")
         trashDir.mkdirs()
 
-        val movedFiles = mutableMapOf<String, File>()
+        val movedFiles = mutableMapOf<File, File>()
         isbns.forEach { isbn ->
-            val file = storageConfig.resolveImagePath(isbn)
-            if (file.exists()) {
-                val target = File(trashDir, file.name)
-                val success = file.renameTo(target)
-                if (success) movedFiles[isbn] = target
+            ImageSide.entries.forEach { side ->
+                val file = storageConfig.resolveImagePath(isbn, side)
+                if (file.exists()) {
+                    val target = File(trashDir, file.name)
+                    val success = file.renameTo(target)
+                    if (success) movedFiles[file] = target
+                }
             }
         }
 
@@ -152,8 +166,7 @@ class BookService(
                     override fun afterCompletion(status: Int) {
                         when (status) {
                             TransactionSynchronization.STATUS_ROLLED_BACK -> {
-                                movedFiles.forEach { (isbn, fileInTrash) ->
-                                    val original = storageConfig.resolveImagePath(isbn)
+                                movedFiles.forEach { (original, fileInTrash) ->
                                     original.parentFile.mkdirs()
                                     fileInTrash.renameTo(original)
                                 }

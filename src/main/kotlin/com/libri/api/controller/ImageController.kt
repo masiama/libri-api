@@ -21,10 +21,9 @@ class ImageController(
     @GetMapping("/{isbn}.jpg")
     fun getImage(
         @PathVariable isbn: String,
-        @RequestParam(defaultValue = "front") side: String,
+        @RequestParam(defaultValue = "front") side: ImageSide,
     ): ResponseEntity<Resource> {
-        val imageSide = ImageSide.fromValue(side) ?: return ResponseEntity.badRequest().build()
-        val file = storageService.load(isbn, imageSide)
+        val file = storageService.load(isbn, side)
         val resource = UrlResource(file.toURI())
 
         val contentType =

@@ -23,8 +23,9 @@ class StorageService(
     fun storeTransactional(
         isbn: String,
         file: MultipartFile,
+        side: ImageSide = ImageSide.FRONT,
     ) {
-        val destination = storageConfig.resolveImagePath(isbn)
+        val destination = storageConfig.resolveImagePath(isbn, side)
         val previousContents = destination.takeIf(File::exists)?.readBytes()
 
         storeInternal(destination, file)
@@ -41,41 +42,32 @@ class StorageService(
     }
 
     fun deleteTransactional(isbn: String) {
-        val destination = storageConfig.resolveImagePath(isbn)
-        val previousContents = destination.takeIf(File::exists)?.readBytes()
+        ImageSide.entries.forEach { side ->
+            val destination = storageConfig.resolveImagePath(isbn, side)
+            val previousContents = destination.takeIf(File::exists)?.readBytes()
 
-        destination.delete()
-
-        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            return
+            destination.delete()
+            registerRollback(destination, previousContents)
         }
-
-        TransactionSynchronizationManager.registerSynchronization(
-            object : TransactionSynchronization {
-                override fun afterCompletion(status: Int) {
-                    if (status != TransactionSynchronization.STATUS_ROLLED_BACK || previousContents == null) {
-                        return
-                    }
-
-                    destination.parentFile?.mkdirs()
-                    destination.writeBytes(previousContents)
-                }
-            },
-        )
     }
 
     fun copyImageTransactional(
         fromIsbn: String,
         toIsbn: String,
     ) {
-        val source = storageConfig.resolveImagePath(fromIsbn)
-        val destination = storageConfig.resolveImagePath(toIsbn)
-        val previousContents = destination.takeIf(File::exists)?.readBytes()
+        ImageSide.entries.forEach { side ->
+            val source = storageConfig.resolveImagePath(fromIsbn, side)
+            // Back and spine are optional; a missing front still fails loudly
+            if (side != ImageSide.FRONT && !source.exists()) return@forEach
 
-        destination.parentFile?.mkdirs()
-        source.copyTo(destination, overwrite = true)
+            val destination = storageConfig.resolveImagePath(toIsbn, side)
+            val previousContents = destination.takeIf(File::exists)?.readBytes()
 
-        registerRollback(destination, previousContents)
+            destination.parentFile?.mkdirs()
+            source.copyTo(destination, overwrite = true)
+
+            registerRollback(destination, previousContents)
+        }
     }
 
     private fun storeInternal(

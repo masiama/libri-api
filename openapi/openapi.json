@@ -39,6 +39,14 @@
                   "file": {
                     "type": "string",
                     "format": "binary"
+                  },
+                  "back": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "spine": {
+                    "type": "string",
+                    "format": "binary"
                   }
                 },
                 "required": [
@@ -318,6 +326,14 @@
                   "file": {
                     "type": "string",
                     "format": "binary"
+                  },
+                  "back": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "spine": {
+                    "type": "string",
+                    "format": "binary"
                   }
                 },
                 "required": [
@@ -409,7 +425,12 @@
             "required": false,
             "schema": {
               "type": "string",
-              "default": "front"
+              "default": "front",
+              "enum": [
+                "front",
+                "back",
+                "spine"
+              ]
             }
           }
         ],

@@ -1,5 +1,6 @@
 package com.libri.api.controller
 
+import com.libri.api.config.ImageSide
 import com.libri.api.dto.BookDTO
 import com.libri.api.service.BookService
 import io.swagger.v3.oas.annotations.Operation
@@ -53,6 +54,11 @@ class BookController(
         } ?: ResponseEntity.notFound().build()
 }
 
+private fun extraImages(
+    back: MultipartFile?,
+    spine: MultipartFile?,
+): Map<ImageSide, MultipartFile> = listOfNotNull(back?.let { ImageSide.BACK to it }, spine?.let { ImageSide.SPINE to it }).toMap()
+
 @RestController
 @RequestMapping("/api/v1/admin/books", produces = [MediaType.APPLICATION_JSON_VALUE])
 class AdminBookController(
@@ -67,8 +73,10 @@ class AdminBookController(
     fun createBook(
         @RequestPart("book") newBook: BookDTO,
         @RequestPart("file") image: MultipartFile,
+        @RequestPart("back", required = false) back: MultipartFile?,
+        @RequestPart("spine", required = false) spine: MultipartFile?,
     ): ResponseEntity<BookDTO> =
-        bookService.createBook(newBook, image)?.let {
+        bookService.createBook(newBook, image, extraImages(back, spine))?.let {
             ResponseEntity.ok(it)
         } ?: ResponseEntity.notFound().build()
 
@@ -82,8 +90,10 @@ class AdminBookController(
         @PathVariable isbn: String,
         @RequestPart("book") newBook: BookDTO,
         @RequestPart("file", required = false) image: MultipartFile?,
+        @RequestPart("back", required = false) back: MultipartFile?,
+        @RequestPart("spine", required = false) spine: MultipartFile?,
     ): ResponseEntity<BookDTO> =
-        bookService.updateBook(isbn, newBook, image)?.let {
+        bookService.updateBook(isbn, newBook, image, extraImages(back, spine))?.let {
             ResponseEntity.ok(it)
         } ?: ResponseEntity.notFound().build()
 
