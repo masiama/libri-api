@@ -37,6 +37,8 @@ class SecurityConfig(
                         "/actuator/health",
                         "/actuator/prometheus",
                     ).permitAll()
+                    .requestMatchers("/api/v1/admin/books/**", "/api/v1/admin/books")
+                    .hasRole("EDITOR")
                     .requestMatchers("/api/v1/admin/**")
                     .hasRole("ADMIN")
                     .anyRequest()
@@ -54,8 +56,19 @@ class SecurityConfig(
         converter.setJwtGrantedAuthoritiesConverter { jwt: Jwt ->
             val authorities = mutableListOf<SimpleGrantedAuthority>()
 
-            if (jwt.getClaim<Boolean>("is_admin") == true) {
-                authorities.add(SimpleGrantedAuthority("ROLE_ADMIN"))
+            when (jwt.getClaim<String>("role")) {
+                "admin" -> {
+                    authorities.addAll(
+                        listOf(
+                            SimpleGrantedAuthority("ROLE_ADMIN"),
+                            SimpleGrantedAuthority("ROLE_EDITOR"),
+                        ),
+                    )
+                }
+
+                "editor" -> {
+                    authorities.add(SimpleGrantedAuthority("ROLE_EDITOR"))
+                }
             }
 
             authorities

@@ -111,14 +111,17 @@ Bearer token.
 Authorization: Bearer <token>
 ```
 
-Admin endpoints require the authenticated user to have `is_admin: true`, which
-is mapped to `ROLE_ADMIN`.
+The user's role comes from the `role` claim in the JWT: `admin` or `editor`.
+Admin implies editor.
+
+- `editor`: everything under `/api/v1/admin/books` (create, edit, delete).
+- `admin`: also the crawler and purgatory endpoints.
 
 Set this in Clerk dashboard → Users → select user → Public metadata:
 
 ```json
 {
-  "is_admin": true
+  "role": "admin"
 }
 ```
 
