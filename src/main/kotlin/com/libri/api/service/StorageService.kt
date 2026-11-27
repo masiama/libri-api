@@ -122,6 +122,6 @@ class StorageService(
     }
 
     companion object {
-        private val allowedTypes = setOf("image/jpeg", "image/png", "image/gif", "image/webp")
+        private val allowedTypes = setOf("image/jpeg", "image/png", "image/gif", "image/webp", "image/avif")
     }
 }
