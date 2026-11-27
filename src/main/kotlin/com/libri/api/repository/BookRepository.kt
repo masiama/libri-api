@@ -14,15 +14,21 @@ interface BookRepository : JpaRepository<Book, String> {
     @Query("select b.url from Book b")
     fun findAllUrls(): List<String>
 
+    fun findBySourceName(
+        sourceName: String,
+        pageable: Pageable,
+    ): Page<Book>
+
     @NativeQuery(
         """
 			SELECT * FROM (
 				SELECT *, source_name AS "sourcename" FROM books
 				WHERE
-				 title ILIKE (:title || '%')
+				 (title ILIKE (:title || '%')
 				 OR title ILIKE ('% ' || :title || '%')
 				 OR title % :title
-				 OR authors_text ILIKE ('%' || :title || '%')
+				 OR authors_text ILIKE ('%' || :title || '%'))
+				 AND (CAST(:source AS text) IS NULL OR source_name = :source)
 				ORDER BY
 				 (title ILIKE (:title || '%')) DESC,
 				 similarity(title, :title) DESC
@@ -31,14 +37,16 @@ interface BookRepository : JpaRepository<Book, String> {
         countQuery = """
 			SELECT count(1) FROM books
 			WHERE
-			 title ILIKE (:title || '%')
+			 (title ILIKE (:title || '%')
 			 OR title ILIKE ('% ' || :title || '%')
 			 OR title % :title
-			 OR authors_text ILIKE ('%' || :title || '%')
+			 OR authors_text ILIKE ('%' || :title || '%'))
+			 AND (CAST(:source AS text) IS NULL OR source_name = :source)
 		""",
     )
     fun searchByTitle(
         @Param("title") title: String,
+        @Param("source") source: String?,
         pageable: Pageable,
     ): Page<Book>
 }

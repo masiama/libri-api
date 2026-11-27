@@ -37,12 +37,13 @@ class BookService(
     fun list(
         pageable: Pageable,
         filter: String?,
+        source: String?,
     ): Page<BookDTO> {
         val books =
-            if (filter.isNullOrBlank()) {
-                bookRepository.findAll(pageable)
-            } else {
-                bookRepository.searchByTitle(filter, pageable)
+            when {
+                !filter.isNullOrBlank() -> bookRepository.searchByTitle(filter, source, pageable)
+                !source.isNullOrBlank() -> bookRepository.findBySourceName(source, pageable)
+                else -> bookRepository.findAll(pageable)
             }
 
         val isbns = books.content.map { it.isbn }

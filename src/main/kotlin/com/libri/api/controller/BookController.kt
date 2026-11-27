@@ -37,8 +37,9 @@ class BookController(
     @GetMapping
     fun list(
         @RequestParam(required = false) filter: String?,
+        @RequestParam(required = false) source: String?,
         @ParameterObject pageable: Pageable,
-    ): Page<BookDTO> = bookService.list(pageable, filter)
+    ): Page<BookDTO> = bookService.list(pageable, filter, source)
 
     @Operation(operationId = "getBookByIsbn")
     @ApiResponses(
